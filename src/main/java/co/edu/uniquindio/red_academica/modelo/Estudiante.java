@@ -31,4 +31,5 @@ public class Estudiante {
     private String email;
     private String programa;
     private List<ObjectId> recursosGuardados;
+    private EstadoUsuario estado;
 }
