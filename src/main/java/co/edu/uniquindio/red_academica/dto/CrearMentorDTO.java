@@ -5,10 +5,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
 public record CrearMentorDTO(
-        @NotBlank(message = "La cédula es obligatoria")
-        @Size(min = 5, max = 20, message = "La cédula debe tener entre 5 y 20 caracteres")
-        String cedula,
-        
         @NotBlank(message = "El nombre es obligatorio")
         @Size(min = 3, max = 100, message = "El nombre debe tener entre 3 y 100 caracteres")
         String nombre,
