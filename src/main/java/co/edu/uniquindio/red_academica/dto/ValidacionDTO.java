@@ -1,0 +1,6 @@
+package co.edu.uniquindio.red_academica.dto;
+
+public record ValidacionDTO(
+        String campo, String mensaje
+) {
+}

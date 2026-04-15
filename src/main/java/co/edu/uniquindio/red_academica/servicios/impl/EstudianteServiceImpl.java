@@ -1,27 +1,44 @@
 package co.edu.uniquindio.red_academica.servicios.impl;
 
-import co.edu.uniquindio.red_academica.dto.CrearEstudianteDTO;
-import co.edu.uniquindio.red_academica.dto.InformacionEstudianteDTO;
+import co.edu.uniquindio.red_academica.config.JWTUtils;
+import co.edu.uniquindio.red_academica.dto.*;
 import co.edu.uniquindio.red_academica.modelo.documentos.Estudiante;
-import co.edu.uniquindio.red_academica.modelo.enums.EstadoUsuario;
 import co.edu.uniquindio.red_academica.modelo.enums.NivelParticipacion;
 import co.edu.uniquindio.red_academica.repositorios.EstudianteRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.EstudianteService;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class EstudianteServiceImpl implements EstudianteService {
 
+    private static final long CODIGO_RECUPERACION_EXPIRACION_MINUTOS = 15;
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final EstudianteRepository estudianteRepository;
+    private final JavaMailSender javaMailSender;
+    private final boolean mailSenderAvailable;
+
+    // 🔐 Encoder global
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final JWTUtils jWTUtils;
 
     @Autowired
-    public EstudianteServiceImpl(EstudianteRepository estudianteRepository) {
+    public EstudianteServiceImpl(EstudianteRepository estudianteRepository,
+                                 ObjectProvider<JavaMailSender> javaMailSenderProvider, JWTUtils jWTUtils) {
         this.estudianteRepository = estudianteRepository;
+        this.javaMailSender = javaMailSenderProvider.getIfAvailable();
+        this.mailSenderAvailable = this.javaMailSender != null;
+        this.jWTUtils = jWTUtils;
     }
 
     @Override
@@ -34,13 +51,16 @@ public class EstudianteServiceImpl implements EstudianteService {
         estudiante.setId(java.util.UUID.randomUUID().toString());
         estudiante.setNombre(dto.nombre());
         estudiante.setCorreo(dto.email());
-        estudiante.setContrasena(dto.password());
+
+        // 🔐 ENCRIPTAR
+        estudiante.setContrasena(passwordEncoder.encode(dto.password()));
+
         estudiante.setPuntosParticipacion(0);
         estudiante.setNivel(NivelParticipacion.determinarNivel(0));
-        estudiante.setContenidosSubidos(List.of());
-        estudiante.setAmigos(List.of());
-        estudiante.setGruposEstudio(List.of());
-        estudiante.setGruposRechazados(List.of());
+        estudiante.setContenidosSubidos(new ArrayList<>());
+        estudiante.setAmigos(new ArrayList<>());
+        estudiante.setGruposEstudio(new ArrayList<>());
+        estudiante.setGruposRechazados(new ArrayList<>());
 
         Estudiante guardado = estudianteRepository.save(estudiante);
         return guardado.getId();
@@ -90,7 +110,9 @@ public class EstudianteServiceImpl implements EstudianteService {
 
         estudiante.setNombre(dto.nombre());
         estudiante.setCorreo(dto.email());
-        estudiante.setContrasena(dto.password());
+
+        // 🔐 ENCRIPTAR NUEVA CONTRASEÑA
+        estudiante.setContrasena(passwordEncoder.encode(dto.password()));
 
         Estudiante actualizado = estudianteRepository.save(estudiante);
         return obtenerPorId(actualizado.getId());
@@ -118,7 +140,9 @@ public class EstudianteServiceImpl implements EstudianteService {
 
         List<String> amigos = estudiante.getAmigos();
         if (amigos == null) {
-            amigos = List.of();
+            amigos = new ArrayList<>();
+        } else {
+            amigos = new ArrayList<>(amigos);
         }
 
         if (amigos.contains(amigoId)) {
@@ -140,6 +164,7 @@ public class EstudianteServiceImpl implements EstudianteService {
             throw new Exception("El usuario no está en tu lista de amigos");
         }
 
+        amigos = new ArrayList<>(amigos);
         amigos.remove(amigoId);
         estudiante.setAmigos(amigos);
         estudianteRepository.save(estudiante);
@@ -194,5 +219,121 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Override
     public boolean existePorCorreo(String correo) {
         return estudianteRepository.existsByCorreo(correo);
+    }
+
+    @Override
+    public TokenDTO autenticar(LoginDTO dto) throws Exception {
+
+        Estudiante estudiante = estudianteRepository.findByCorreo(dto.email())
+                .orElseThrow(() -> new Exception("Correo o contraseña incorrectos"));
+
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+        // 🔐 Validar contraseña
+        if (!passwordEncoder.matches(dto.password(), estudiante.getContrasena())) {
+            throw new Exception("La contraseña es incorrecta");
+        }
+
+        // 🔥 Construir claims
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", estudiante.getId());
+        claims.put("nombre", estudiante.getNombre());
+        claims.put("rol", "ESTUDIANTE"); // o lo que manejes
+
+        // 🔥 Generar token
+        String token = jWTUtils.generarToken(estudiante.getCorreo(), claims);
+
+        return new TokenDTO(token);
+    }
+
+    @Override
+    public void cambiarContrasena(String estudianteId, CambiarPasswordDTO dto) throws Exception {
+        Estudiante estudiante = estudianteRepository.findById(estudianteId)
+                .orElseThrow(() -> new Exception("Estudiante no encontrado"));
+
+        if (!passwordEncoder.matches(dto.passwordActual(), estudiante.getContrasena())) {
+            throw new Exception("Contraseña actual incorrecta");
+        }
+
+        estudiante.setContrasena(passwordEncoder.encode(dto.passwordNueva()));
+        estudianteRepository.save(estudiante);
+    }
+
+    @Override
+    public String obtenerPorCorreo(ObtenerNombreDTO usuario) {
+        Optional<Estudiante> estudiante = estudianteRepository.findByCorreo(usuario.correo());
+        return estudiante.get().getNombre();
+    }
+
+    @Override
+    public void iniciarRecuperacionPassword(String email) throws Exception {
+        Estudiante estudiante = estudianteRepository.findByCorreo(email)
+                .orElseThrow(() -> new Exception("Correo no registrado"));
+
+        String codigo = generarCodigoRecuperacion();
+        estudiante.setCodigoRecuperacion(codigo);
+        estudiante.setFechaExpiracionCodigoRecuperacion(
+                LocalDateTime.now().plusMinutes(CODIGO_RECUPERACION_EXPIRACION_MINUTOS)
+        );
+        estudianteRepository.save(estudiante);
+
+        enviarCodigoRecuperacion(email, codigo);
+    }
+
+    @Override
+    public void verificarCodigoRecuperacion(String email, String codigo) throws Exception {
+        Estudiante estudiante = estudianteRepository.findByCorreo(email)
+                .orElseThrow(() -> new Exception("Correo no registrado"));
+
+        if (estudiante.getCodigoRecuperacion() == null ||
+                !estudiante.getCodigoRecuperacion().equals(codigo)) {
+            throw new Exception("Código de recuperación inválido");
+        }
+
+        if (estudiante.getFechaExpiracionCodigoRecuperacion() == null ||
+                estudiante.getFechaExpiracionCodigoRecuperacion().isBefore(LocalDateTime.now())) {
+            throw new Exception("El código de recuperación ha expirado");
+        }
+    }
+
+    @Override
+    public void restablecerPassword(String email, String codigo, String passwordNueva) throws Exception {
+        Estudiante estudiante = estudianteRepository.findByCorreo(email)
+                .orElseThrow(() -> new Exception("Correo no registrado"));
+
+        if (estudiante.getCodigoRecuperacion() == null ||
+                !estudiante.getCodigoRecuperacion().equals(codigo)) {
+            throw new Exception("Código de recuperación inválido");
+        }
+
+        if (estudiante.getFechaExpiracionCodigoRecuperacion() == null ||
+                estudiante.getFechaExpiracionCodigoRecuperacion().isBefore(LocalDateTime.now())) {
+            throw new Exception("El código de recuperación ha expirado");
+        }
+
+        // 🔐 ENCRIPTAR
+        estudiante.setContrasena(passwordEncoder.encode(passwordNueva));
+
+        estudiante.setCodigoRecuperacion(null);
+        estudiante.setFechaExpiracionCodigoRecuperacion(null);
+        estudianteRepository.save(estudiante);
+    }
+
+    private String generarCodigoRecuperacion() {
+        int numero = 100000 + RANDOM.nextInt(900000);
+        return String.valueOf(numero);
+    }
+
+    private void enviarCodigoRecuperacion(String correo, String codigo) {
+        if (mailSenderAvailable) {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("redacademicauq@gmail.com");
+            message.setTo(correo);
+            message.setSubject("Recuperación de contraseña Red Académica");
+            message.setText("Tu código es: " + codigo);
+            javaMailSender.send(message);
+        } else {
+            System.out.println("[RECUPERACION] Código para " + correo + ": " + codigo);
+        }
     }
 }

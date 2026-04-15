@@ -4,11 +4,14 @@ import co.edu.uniquindio.red_academica.dto.*;
 import co.edu.uniquindio.red_academica.servicios.interfaces.ContenidoAcademicoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 @RequiredArgsConstructor
 @RequestMapping("/api/contenidos-academicos")
 public class ContenidoAcademicoController {
@@ -27,10 +30,16 @@ public class ContenidoAcademicoController {
         return ResponseEntity.ok(new ResponseDTO<>("Contenido encontrado", contenido));
     }
 
-    @GetMapping
+    @GetMapping("/obtener-contenidos")
     public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> obtenerTodos() {
         List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.obtenerTodos();
         return ResponseEntity.ok(new ResponseDTO<>("Lista de contenidos", contenidos));
+    }
+
+    @PostMapping("/buscar")
+    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> buscar(@RequestBody BuscarContenidoDTO dto) throws Exception {
+        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.buscar(dto);
+        return ResponseEntity.ok(new ResponseDTO<>("Contenidos encontrados", contenidos));
     }
 
     @PutMapping("/{id}")

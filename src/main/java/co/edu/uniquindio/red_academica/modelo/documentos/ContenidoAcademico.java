@@ -44,5 +44,4 @@ public class ContenidoAcademico {
 
     @Field("fecha_creacion")
     private LocalDateTime fechaCreacion;
-
 }

@@ -8,6 +8,7 @@ import co.edu.uniquindio.red_academica.servicios.interfaces.MentorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,7 @@ public class MentorServiceImpl implements MentorService {
         mentor.setCorreo(dto.email());
         mentor.setContrasena(dto.password());
         mentor.setEspecialidad(dto.especialidad());
-        mentor.setHorariosDisponibles(List.of());
+        mentor.setHorariosDisponibles(new ArrayList<>());
 
         Mentor guardado = mentorRepository.save(mentor);
         return guardado.getId();

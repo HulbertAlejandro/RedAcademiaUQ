@@ -1,11 +1,14 @@
 package co.edu.uniquindio.red_academica.servicios.impl;
 
+import co.edu.uniquindio.red_academica.dto.BuscarContenidoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearContenidoAcademicoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearValoracionDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionContenidoAcademicoDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionValoracionDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.ContenidoAcademico;
 import co.edu.uniquindio.red_academica.modelo.documentos.Valoracion;
+import co.edu.uniquindio.red_academica.modelo.enums.TEMA;
+import co.edu.uniquindio.red_academica.modelo.enums.TipoContenido;
 import co.edu.uniquindio.red_academica.repositorios.ContenidoAcademicoRepository;
 import co.edu.uniquindio.red_academica.repositorios.EstudianteRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.ContenidoAcademicoService;
@@ -13,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,7 +30,7 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
 
     @Autowired
     public ContenidoAcademicoServiceImpl(ContenidoAcademicoRepository contenidoRepository,
-                                      EstudianteRepository estudianteRepository) {
+                                         EstudianteRepository estudianteRepository) {
         this.contenidoRepository = contenidoRepository;
         this.estudianteRepository = estudianteRepository;
     }
@@ -39,7 +44,7 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
         contenido.setAutor(dto.autor());
         contenido.setContenido(dto.contenido());
         contenido.setTipoContenido(dto.tipoContenido());
-        contenido.setValoraciones(List.of());
+        contenido.setValoraciones(new ArrayList<>());
         contenido.setFechaCreacion(LocalDateTime.now());
 
         ContenidoAcademico guardado = contenidoRepository.save(contenido);
@@ -51,11 +56,15 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
         ContenidoAcademico contenido = contenidoRepository.findById(id)
                 .orElseThrow(() -> new Exception("Contenido no encontrado"));
 
-        List<InformacionValoracionDTO> valoracionesDTO = contenido.getValoraciones().stream()
+        List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                ? contenido.getValoraciones()
+                : new ArrayList<>();
+
+        List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
                 .map(this::convertirValoracion)
                 .collect(Collectors.toList());
 
-        double puntuacionPromedio = calcularPuntuacionPromedio(contenido.getValoraciones());
+        double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
 
         return new InformacionContenidoAcademicoDTO(
                 contenido.getId(),
@@ -74,11 +83,16 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
     public List<InformacionContenidoAcademicoDTO> obtenerTodos() {
         return contenidoRepository.findAll().stream()
                 .map(contenido -> {
-                    List<InformacionValoracionDTO> valoracionesDTO = contenido.getValoraciones().stream()
+                    List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                            ? contenido.getValoraciones()
+                            : new ArrayList<>();
+
+                    List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
                             .map(this::convertirValoracion)
                             .collect(Collectors.toList());
-                    double puntuacionPromedio = calcularPuntuacionPromedio(contenido.getValoraciones());
-                    
+
+                    double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
+
                     return new InformacionContenidoAcademicoDTO(
                             contenido.getId(),
                             contenido.getTitulo(),
@@ -122,11 +136,16 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
         List<ContenidoAcademico> contenidos = contenidoRepository.findByTema(tema);
         return contenidos.stream()
                 .map(contenido -> {
-                    List<InformacionValoracionDTO> valoracionesDTO = contenido.getValoraciones().stream()
+                    List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                            ? contenido.getValoraciones()
+                            : new ArrayList<>();
+
+                    List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
                             .map(this::convertirValoracion)
                             .collect(Collectors.toList());
-                    double puntuacionPromedio = calcularPuntuacionPromedio(contenido.getValoraciones());
-                    
+
+                    double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
+
                     return new InformacionContenidoAcademicoDTO(
                             contenido.getId(),
                             contenido.getTitulo(),
@@ -143,15 +162,20 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
     }
 
     @Override
-    public List<InformacionContenidoAcademicoDTO> buscarPorAutor(String autorId) throws Exception {
-        List<ContenidoAcademico> contenidos = contenidoRepository.findByAutor(autorId);
+    public List<InformacionContenidoAcademicoDTO> buscarPorAutor(String autor) throws Exception {
+        List<ContenidoAcademico> contenidos = contenidoRepository.findByAutor(autor);
         return contenidos.stream()
                 .map(contenido -> {
-                    List<InformacionValoracionDTO> valoracionesDTO = contenido.getValoraciones().stream()
+                    List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                            ? contenido.getValoraciones()
+                            : new ArrayList<>();
+
+                    List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
                             .map(this::convertirValoracion)
                             .collect(Collectors.toList());
-                    double puntuacionPromedio = calcularPuntuacionPromedio(contenido.getValoraciones());
-                    
+
+                    double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
+
                     return new InformacionContenidoAcademicoDTO(
                             contenido.getId(),
                             contenido.getTitulo(),
@@ -172,11 +196,16 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
         List<ContenidoAcademico> contenidos = contenidoRepository.findByTipoContenido(tipo);
         return contenidos.stream()
                 .map(contenido -> {
-                    List<InformacionValoracionDTO> valoracionesDTO = contenido.getValoraciones().stream()
+                    List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                            ? contenido.getValoraciones()
+                            : new ArrayList<>();
+
+                    List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
                             .map(this::convertirValoracion)
                             .collect(Collectors.toList());
-                    double puntuacionPromedio = calcularPuntuacionPromedio(contenido.getValoraciones());
-                    
+
+                    double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
+
                     return new InformacionContenidoAcademicoDTO(
                             contenido.getId(),
                             contenido.getTitulo(),
@@ -197,11 +226,96 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
         List<ContenidoAcademico> contenidos = contenidoRepository.findByTituloContainingIgnoreCase(titulo);
         return contenidos.stream()
                 .map(contenido -> {
-                    List<InformacionValoracionDTO> valoracionesDTO = contenido.getValoraciones().stream()
+                    List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                            ? contenido.getValoraciones()
+                            : new ArrayList<>();
+
+                    List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
                             .map(this::convertirValoracion)
                             .collect(Collectors.toList());
-                    double puntuacionPromedio = calcularPuntuacionPromedio(contenido.getValoraciones());
-                    
+
+                    double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
+
+                    return new InformacionContenidoAcademicoDTO(
+                            contenido.getId(),
+                            contenido.getTitulo(),
+                            contenido.getTema(),
+                            contenido.getAutor(),
+                            contenido.getContenido(),
+                            contenido.getTipoContenido(),
+                            valoracionesDTO,
+                            puntuacionPromedio,
+                            contenido.getFechaCreacion()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<InformacionContenidoAcademicoDTO> buscar(BuscarContenidoDTO dto) throws Exception {
+        String autor = dto.autor() != null ? dto.autor().trim().toLowerCase() : "";
+        String textoBusqueda = dto.textoBusqueda() != null ? dto.textoBusqueda().trim().toLowerCase() : "";
+        final TEMA tema;
+        if (dto.tema() != null && !dto.tema().isBlank()) {
+            TEMA parsedTema;
+            try {
+                parsedTema = TEMA.valueOf(dto.tema().trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                parsedTema = null;
+            }
+            tema = parsedTema;
+        } else {
+            tema = null;
+        }
+
+        final TipoContenido tipoContenido;
+        if (dto.tipoContenido() != null && !dto.tipoContenido().isBlank()) {
+            TipoContenido parsedTipoContenido;
+            try {
+                parsedTipoContenido = TipoContenido.valueOf(dto.tipoContenido().trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                parsedTipoContenido = null;
+            }
+            tipoContenido = parsedTipoContenido;
+        } else {
+            tipoContenido = null;
+        }
+
+        boolean filtrarTema = tema != null;
+        boolean filtrarTipo = tipoContenido != null;
+        boolean filtrarAutor = !autor.isEmpty();
+        boolean filtrarTexto = !textoBusqueda.isEmpty();
+
+        List<ContenidoAcademico> contenidosFiltrados = contenidoRepository.findAll().stream()
+                .filter(contenido -> !filtrarTema || contenido.getTema() == tema)
+                .filter(contenido -> !filtrarTipo || contenido.getTipoContenido() == tipoContenido)
+                .filter(contenido -> !filtrarAutor || (contenido.getAutor() != null && contenido.getAutor().toLowerCase().contains(autor)))
+                .filter(contenido -> {
+                    if (!filtrarTexto) return true;
+                    String titulo = contenido.getTitulo() != null ? contenido.getTitulo().toLowerCase() : "";
+                    String cuerpo = contenido.getContenido() != null ? contenido.getContenido().toLowerCase() : "";
+                    return titulo.contains(textoBusqueda) || cuerpo.contains(textoBusqueda);
+                })
+                .sorted(Comparator.comparing(ContenidoAcademico::getFechaCreacion, Comparator.nullsLast(Comparator.reverseOrder())))
+                .collect(Collectors.toList());
+
+        int pagina = Math.max(dto.pagina(), 0);
+        int tamano = Math.max(dto.tamano(), 1);
+        int desde = Math.min(pagina * tamano, contenidosFiltrados.size());
+        int hasta = Math.min(desde + tamano, contenidosFiltrados.size());
+
+        return contenidosFiltrados.subList(desde, hasta).stream()
+                .map(contenido -> {
+                    List<Valoracion> valoraciones = contenido.getValoraciones() != null
+                            ? contenido.getValoraciones()
+                            : new ArrayList<>();
+
+                    List<InformacionValoracionDTO> valoracionesDTO = valoraciones.stream()
+                            .map(this::convertirValoracion)
+                            .collect(Collectors.toList());
+
+                    double puntuacionPromedio = calcularPuntuacionPromedio(valoraciones);
+
                     return new InformacionContenidoAcademicoDTO(
                             contenido.getId(),
                             contenido.getTitulo(),
@@ -232,7 +346,9 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
 
         List<Valoracion> valoraciones = contenido.getValoraciones();
         if (valoraciones == null) {
-            valoraciones = List.of();
+            valoraciones = new ArrayList<>();
+        } else {
+            valoraciones = new ArrayList<>(valoraciones);
         }
 
         Optional<Valoracion> valoracionExistente = valoraciones.stream()
@@ -245,6 +361,7 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
 
         Valoracion nuevaValoracion = new Valoracion();
         nuevaValoracion.setEstudianteId(dto.estudianteId());
+        nuevaValoracion.setContenidoId(dto.contenidoId());
         nuevaValoracion.setPuntaje(dto.puntaje());
         nuevaValoracion.setComentario(dto.comentario());
         nuevaValoracion.setFecha(LocalDateTime.now());
@@ -273,7 +390,9 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
 
         List<String> contenidosGuardados = estudiante.getContenidosSubidos();
         if (contenidosGuardados == null) {
-            contenidosGuardados = List.of();
+            contenidosGuardados = new ArrayList<>();
+        } else {
+            contenidosGuardados = new ArrayList<>(contenidosGuardados);
         }
 
         if (contenidosGuardados.contains(contenidoId)) {

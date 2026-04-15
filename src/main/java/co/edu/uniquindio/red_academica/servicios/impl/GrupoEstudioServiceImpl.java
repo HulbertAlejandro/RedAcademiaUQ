@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
 
     @Autowired
     public GrupoEstudioServiceImpl(GrupoEstudioRepository grupoRepository,
-                                 EstudianteRepository estudianteRepository) {
+                                   EstudianteRepository estudianteRepository) {
         this.grupoRepository = grupoRepository;
         this.estudianteRepository = estudianteRepository;
     }
@@ -37,7 +38,7 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         grupo.setNombre(dto.nombre());
         grupo.setTema(dto.tema());
         grupo.setDescripcion(dto.descripcion());
-        grupo.setParticipantes(List.of());
+        grupo.setParticipantes(new ArrayList<>());
         grupo.setFechaCreacion(LocalDateTime.now());
 
         GrupoEstudio guardado = grupoRepository.save(grupo);
@@ -49,7 +50,9 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         GrupoEstudio grupo = grupoRepository.findById(id)
                 .orElseThrow(() -> new Exception("Grupo no encontrado"));
 
-        List<InformacionParticipanteDTO> participantesDTO = grupo.getParticipantes().stream()
+        List<String> participantes = grupo.getParticipantes() != null ? grupo.getParticipantes() : new ArrayList<>();
+
+        List<InformacionParticipanteDTO> participantesDTO = participantes.stream()
                 .map(this::convertirParticipante)
                 .collect(Collectors.toList());
 
@@ -59,7 +62,7 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
                 grupo.getTema(),
                 grupo.getDescripcion(),
                 participantesDTO,
-                grupo.getParticipantes() != null ? grupo.getParticipantes().size() : 0,
+                participantes.size(),
                 grupo.getFechaCreacion(),
                 false
         );
@@ -69,17 +72,19 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
     public List<InformacionGrupoEstudioDTO> obtenerTodos() {
         return grupoRepository.findAll().stream()
                 .map(grupo -> {
-                    List<InformacionParticipanteDTO> participantesDTO = grupo.getParticipantes().stream()
+                    List<String> participantes = grupo.getParticipantes() != null ? grupo.getParticipantes() : new ArrayList<>();
+
+                    List<InformacionParticipanteDTO> participantesDTO = participantes.stream()
                             .map(this::convertirParticipante)
                             .collect(Collectors.toList());
-                    
+
                     return new InformacionGrupoEstudioDTO(
                             grupo.getId(),
                             grupo.getNombre(),
                             grupo.getTema(),
                             grupo.getDescripcion(),
                             participantesDTO,
-                            grupo.getParticipantes() != null ? grupo.getParticipantes().size() : 0,
+                            participantes.size(),
                             grupo.getFechaCreacion(),
                             false
                     );
@@ -113,17 +118,19 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         List<GrupoEstudio> grupos = grupoRepository.findByTema(tema);
         return grupos.stream()
                 .map(grupo -> {
-                    List<InformacionParticipanteDTO> participantesDTO = grupo.getParticipantes().stream()
+                    List<String> participantes = grupo.getParticipantes() != null ? grupo.getParticipantes() : new ArrayList<>();
+
+                    List<InformacionParticipanteDTO> participantesDTO = participantes.stream()
                             .map(this::convertirParticipante)
                             .collect(Collectors.toList());
-                    
+
                     return new InformacionGrupoEstudioDTO(
                             grupo.getId(),
                             grupo.getNombre(),
                             grupo.getTema(),
                             grupo.getDescripcion(),
                             participantesDTO,
-                            grupo.getParticipantes() != null ? grupo.getParticipantes().size() : 0,
+                            participantes.size(),
                             grupo.getFechaCreacion(),
                             false
                     );
@@ -136,17 +143,19 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         List<GrupoEstudio> grupos = grupoRepository.findByNombreContainingIgnoreCase(nombre);
         return grupos.stream()
                 .map(grupo -> {
-                    List<InformacionParticipanteDTO> participantesDTO = grupo.getParticipantes().stream()
+                    List<String> participantes = grupo.getParticipantes() != null ? grupo.getParticipantes() : new ArrayList<>();
+
+                    List<InformacionParticipanteDTO> participantesDTO = participantes.stream()
                             .map(this::convertirParticipante)
                             .collect(Collectors.toList());
-                    
+
                     return new InformacionGrupoEstudioDTO(
                             grupo.getId(),
                             grupo.getNombre(),
                             grupo.getTema(),
                             grupo.getDescripcion(),
                             participantesDTO,
-                            grupo.getParticipantes() != null ? grupo.getParticipantes().size() : 0,
+                            participantes.size(),
                             grupo.getFechaCreacion(),
                             false
                     );
@@ -165,7 +174,9 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
 
         List<String> participantes = grupo.getParticipantes();
         if (participantes == null) {
-            participantes = List.of();
+            participantes = new ArrayList<>();
+        } else {
+            participantes = new ArrayList<>(participantes);
         }
 
         if (participantes.contains(dto.estudianteId())) {
@@ -179,11 +190,16 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         estudianteRepository.findById(dto.estudianteId()).ifPresent(estudiante -> {
             List<String> gruposEstudiante = estudiante.getGruposEstudio();
             if (gruposEstudiante == null) {
-                gruposEstudiante = List.of();
+                gruposEstudiante = new ArrayList<>();
+            } else {
+                gruposEstudiante = new ArrayList<>(gruposEstudiante);
             }
-            gruposEstudiante.add(dto.grupoId());
-            estudiante.setGruposEstudio(gruposEstudiante);
-            estudianteRepository.save(estudiante);
+
+            if (!gruposEstudiante.contains(dto.grupoId())) {
+                gruposEstudiante.add(dto.grupoId());
+                estudiante.setGruposEstudio(gruposEstudiante);
+                estudianteRepository.save(estudiante);
+            }
         });
     }
 
@@ -197,6 +213,7 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
             throw new Exception("El estudiante no es miembro del grupo");
         }
 
+        participantes = new ArrayList<>(participantes);
         participantes.remove(dto.estudianteId());
         grupo.setParticipantes(participantes);
         grupoRepository.save(grupo);
@@ -204,6 +221,7 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         estudianteRepository.findById(dto.estudianteId()).ifPresent(estudiante -> {
             List<String> gruposEstudiante = estudiante.getGruposEstudio();
             if (gruposEstudiante != null) {
+                gruposEstudiante = new ArrayList<>(gruposEstudiante);
                 gruposEstudiante.remove(dto.grupoId());
                 estudiante.setGruposEstudio(gruposEstudiante);
                 estudianteRepository.save(estudiante);
@@ -218,7 +236,9 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
 
         List<String> gruposRechazados = estudiante.getGruposRechazados();
         if (gruposRechazados == null) {
-            gruposRechazados = List.of();
+            gruposRechazados = new ArrayList<>();
+        } else {
+            gruposRechazados = new ArrayList<>(gruposRechazados);
         }
 
         if (gruposRechazados.contains(dto.grupoId())) {
@@ -235,19 +255,21 @@ public class GrupoEstudioServiceImpl implements GrupoEstudioService {
         List<GrupoEstudio> grupos = grupoRepository.findByParticipantesContaining(estudianteId);
         return grupos.stream()
                 .map(grupo -> {
-                    List<InformacionParticipanteDTO> participantesDTO = grupo.getParticipantes().stream()
+                    List<String> participantes = grupo.getParticipantes() != null ? grupo.getParticipantes() : new ArrayList<>();
+
+                    List<InformacionParticipanteDTO> participantesDTO = participantes.stream()
                             .map(this::convertirParticipante)
                             .collect(Collectors.toList());
-                    
+
                     return new InformacionGrupoEstudioDTO(
                             grupo.getId(),
                             grupo.getNombre(),
                             grupo.getTema(),
                             grupo.getDescripcion(),
                             participantesDTO,
-                            grupo.getParticipantes() != null ? grupo.getParticipantes().size() : 0,
+                            participantes.size(),
                             grupo.getFechaCreacion(),
-                            grupo.getParticipantes() != null && grupo.getParticipantes().contains(estudianteId)
+                            participantes.contains(estudianteId)
                     );
                 })
                 .collect(Collectors.toList());

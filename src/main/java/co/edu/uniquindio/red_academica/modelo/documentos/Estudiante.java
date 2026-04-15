@@ -8,16 +8,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Document(collection = "estudiantes")
@@ -38,4 +40,10 @@ public class Estudiante extends Usuario {
     
     @Field("grupos_rechazados")
     private List<String> gruposRechazados;
+    
+    @Field("codigo_recuperacion")
+    private String codigoRecuperacion;
+    
+    @Field("fecha_expiracion_codigo_recuperacion")
+    private LocalDateTime fechaExpiracionCodigoRecuperacion;
 }

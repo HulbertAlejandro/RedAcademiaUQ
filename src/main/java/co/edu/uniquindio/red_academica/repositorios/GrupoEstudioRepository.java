@@ -3,8 +3,10 @@ package co.edu.uniquindio.red_academica.repositorios;
 import co.edu.uniquindio.red_academica.modelo.documentos.GrupoEstudio;
 import co.edu.uniquindio.red_academica.modelo.enums.TEMA;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -16,7 +18,8 @@ public interface GrupoEstudioRepository extends MongoRepository<GrupoEstudio, St
 
     List<GrupoEstudio> findByNombreContainingIgnoreCase(String nombre);
 
-    List<GrupoEstudio> findByParticipantesSizeGreaterThanEqual(int minParticipantes);
+    @Query(" { $gte: [ { $size: \"$participantes\" }, ?0 ] }")
+    List<GrupoEstudio> buscarConMinimoParticipantes(int minParticipantes);
 
-    List<GrupoEstudio> findByFechaCreacionBetween(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
+    List<GrupoEstudio> findByFechaCreacionBetween(LocalDateTime inicio, LocalDateTime fin);
 }

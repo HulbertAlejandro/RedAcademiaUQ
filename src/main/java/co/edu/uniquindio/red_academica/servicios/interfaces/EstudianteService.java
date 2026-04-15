@@ -1,11 +1,10 @@
 package co.edu.uniquindio.red_academica.servicios.interfaces;
 
-import co.edu.uniquindio.red_academica.dto.CrearEstudianteDTO;
-import co.edu.uniquindio.red_academica.dto.InformacionEstudianteDTO;
-import co.edu.uniquindio.red_academica.modelo.documentos.Estudiante;
+import co.edu.uniquindio.red_academica.dto.*;
 import co.edu.uniquindio.red_academica.modelo.enums.NivelParticipacion;
+import jakarta.validation.Valid;
+
 import java.util.List;
-import java.util.Optional;
 
 public interface EstudianteService {
 
@@ -30,4 +29,16 @@ public interface EstudianteService {
     void agregarPuntosParticipacion(String estudianteId, int puntos) throws Exception;
 
     boolean existePorCorreo(String correo);
+
+    void iniciarRecuperacionPassword(String email) throws Exception;
+
+    void verificarCodigoRecuperacion(String email, String codigo) throws Exception;
+
+    void restablecerPassword(String email, String codigo, String passwordNueva) throws Exception;
+
+    TokenDTO autenticar(LoginDTO dto) throws Exception;
+
+    void cambiarContrasena(String estudianteId, CambiarPasswordDTO dto) throws Exception;
+
+    String obtenerPorCorreo(@Valid ObtenerNombreDTO usuario);
 }

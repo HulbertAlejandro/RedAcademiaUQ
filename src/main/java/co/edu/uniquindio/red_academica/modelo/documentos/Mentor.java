@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -16,7 +17,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Document(collection = "mentores")

@@ -1,5 +1,6 @@
 package co.edu.uniquindio.red_academica.servicios.interfaces;
 
+import co.edu.uniquindio.red_academica.dto.BuscarContenidoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearContenidoAcademicoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearValoracionDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionContenidoAcademicoDTO;
@@ -15,6 +16,8 @@ public interface ContenidoAcademicoService {
     InformacionContenidoAcademicoDTO obtenerPorId(String id) throws Exception;
 
     List<InformacionContenidoAcademicoDTO> obtenerTodos();
+
+    List<InformacionContenidoAcademicoDTO> buscar(BuscarContenidoDTO dto) throws Exception;
 
     InformacionContenidoAcademicoDTO actualizar(String id, CrearContenidoAcademicoDTO dto) throws Exception;
 

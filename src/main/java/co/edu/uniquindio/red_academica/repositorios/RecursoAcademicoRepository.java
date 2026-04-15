@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface RecursoAcademicoRepository extends MongoRepository<RecursoAcademico, String> {
 
-    List<RecursoAcademico> findByAutor(String idAutor);
+    List<RecursoAcademico> findByIdAutor(String idAutor);
 
     List<RecursoAcademico> findByTipo(TipoContenido tipo);
 

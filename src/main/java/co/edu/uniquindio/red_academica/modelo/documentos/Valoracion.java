@@ -16,4 +16,5 @@ public class Valoracion {
     private int puntaje;
     private String comentario;
     private LocalDateTime fecha;
+    private String contenidoId;
 }

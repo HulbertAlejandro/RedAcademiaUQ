@@ -5,7 +5,7 @@ import co.edu.uniquindio.red_academica.dto.CrearMensajeDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionChatDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionMensajeDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.Chat;
-import co.edu.uniquindio.red_academica.modelo.documentos.Chat.Mensaje;
+import co.edu.uniquindio.red_academica.modelo.documentos.Mensaje;
 import co.edu.uniquindio.red_academica.repositorios.ChatRepository;
 import co.edu.uniquindio.red_academica.repositorios.MensajeRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.ChatService;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,20 +36,23 @@ public class ChatServiceImpl implements ChatService {
             throw new Exception("No puedes crear un chat contigo mismo");
         }
 
-        Optional<Chat> chatExistente = chatRepository.findAll().stream()
-                .filter(chat -> (chat.getEstudiante1Id().equals(dto.estudiante1Id()) && chat.getEstudiante2Id().equals(dto.estudiante2Id())) ||
-                        (chat.getEstudiante1Id().equals(dto.estudiante2Id()) && chat.getEstudiante2Id().equals(dto.estudiante1Id())))
-                .findFirst();
+        Optional<Chat> chatExistente = chatRepository
+                .findByEstudiante1IdAndEstudiante2Id(dto.estudiante1Id(), dto.estudiante2Id());
+
+        if (chatExistente.isEmpty()) {
+            chatExistente = chatRepository
+                    .findByEstudiante2IdAndEstudiante1Id(dto.estudiante1Id(), dto.estudiante2Id());
+        }
 
         if (chatExistente.isPresent()) {
             throw new Exception("Ya existe un chat entre estos estudiantes");
         }
 
         Chat chat = new Chat();
-        chat.setId(java.util.UUID.randomUUID().toString());
+        chat.setId(UUID.randomUUID().toString());
         chat.setEstudiante1Id(dto.estudiante1Id());
         chat.setEstudiante2Id(dto.estudiante2Id());
-        chat.setMensajes(List.of());
+        chat.setFechaCreacion(LocalDateTime.now());
 
         Chat guardado = chatRepository.save(chat);
         return guardado.getId();
@@ -59,11 +63,13 @@ public class ChatServiceImpl implements ChatService {
         Chat chat = chatRepository.findById(id)
                 .orElseThrow(() -> new Exception("Chat no encontrado"));
 
-        List<InformacionMensajeDTO> mensajesDTO = chat.getMensajes().stream()
+        List<Mensaje> mensajes = mensajeRepository.findByChatIdOrderByFechaAsc(chat.getId());
+
+        List<InformacionMensajeDTO> mensajesDTO = mensajes.stream()
                 .map(this::convertirMensaje)
                 .collect(Collectors.toList());
 
-        LocalDateTime ultimoMensaje = chat.getMensajes().stream()
+        LocalDateTime ultimoMensaje = mensajes.stream()
                 .map(Mensaje::getFecha)
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
@@ -81,18 +87,21 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public List<InformacionChatDTO> obtenerPorEstudiante(String estudianteId) throws Exception {
-        List<Chat> chats = chatRepository.findByEstudiante1IdOrEstudiante2Id(estudianteId);
+        List<Chat> chats = chatRepository.findByEstudiante1IdOrEstudiante2Id(estudianteId, estudianteId);
+
         return chats.stream()
                 .map(chat -> {
-                    List<InformacionMensajeDTO> mensajesDTO = chat.getMensajes().stream()
+                    List<Mensaje> mensajes = mensajeRepository.findByChatIdOrderByFechaAsc(chat.getId());
+
+                    List<InformacionMensajeDTO> mensajesDTO = mensajes.stream()
                             .map(this::convertirMensaje)
                             .collect(Collectors.toList());
-                    
-                    LocalDateTime ultimoMensaje = chat.getMensajes().stream()
+
+                    LocalDateTime ultimoMensaje = mensajes.stream()
                             .map(Mensaje::getFecha)
                             .max(LocalDateTime::compareTo)
                             .orElse(null);
-                    
+
                     return new InformacionChatDTO(
                             chat.getId(),
                             chat.getEstudiante1Id(),
@@ -111,6 +120,12 @@ public class ChatServiceImpl implements ChatService {
         if (!chatRepository.existsById(id)) {
             throw new Exception("Chat no encontrado");
         }
+
+        List<Mensaje> mensajes = mensajeRepository.findByChatIdOrderByFechaAsc(id);
+        if (!mensajes.isEmpty()) {
+            mensajeRepository.deleteAll(mensajes);
+        }
+
         chatRepository.deleteById(id);
     }
 
@@ -119,44 +134,41 @@ public class ChatServiceImpl implements ChatService {
         Chat chat = chatRepository.findById(dto.chatId())
                 .orElseThrow(() -> new Exception("Chat no encontrado"));
 
-        if (!chat.getEstudiante1Id().equals(dto.remitenteId()) && !chat.getEstudiante2Id().equals(dto.remitenteId())) {
+        if (!chat.getEstudiante1Id().equals(dto.remitenteId()) &&
+                !chat.getEstudiante2Id().equals(dto.remitenteId())) {
             throw new Exception("No eres participante de este chat");
         }
 
         Mensaje mensaje = new Mensaje();
+        mensaje.setId(UUID.randomUUID().toString());
+        mensaje.setChatId(dto.chatId());
         mensaje.setRemitenteId(dto.remitenteId());
         mensaje.setDestinatarioId(dto.destinatarioId());
         mensaje.setContenido(dto.contenido());
         mensaje.setFecha(LocalDateTime.now());
 
-        List<Mensaje> mensajes = chat.getMensajes();
-        if (mensajes == null) {
-            mensajes = List.of();
-        }
-        mensajes.add(mensaje);
-        chat.setMensajes(mensajes);
-
-        chatRepository.save(chat);
+        mensajeRepository.save(mensaje);
     }
 
     @Override
     public List<InformacionChatDTO> obtenerChatsEntreEstudiantes(String estudiante1Id, String estudiante2Id) throws Exception {
-        List<Chat> chats = chatRepository.findAll().stream()
-                .filter(chat -> (chat.getEstudiante1Id().equals(estudiante1Id) && chat.getEstudiante2Id().equals(estudiante2Id)) ||
-                        (chat.getEstudiante1Id().equals(estudiante2Id) && chat.getEstudiante2Id().equals(estudiante1Id)))
-                .collect(Collectors.toList());
-
-        return chats.stream()
+        return chatRepository.findAll().stream()
+                .filter(chat ->
+                        (chat.getEstudiante1Id().equals(estudiante1Id) && chat.getEstudiante2Id().equals(estudiante2Id)) ||
+                                (chat.getEstudiante1Id().equals(estudiante2Id) && chat.getEstudiante2Id().equals(estudiante1Id))
+                )
                 .map(chat -> {
-                    List<InformacionMensajeDTO> mensajesDTO = chat.getMensajes().stream()
+                    List<Mensaje> mensajes = mensajeRepository.findByChatIdOrderByFechaAsc(chat.getId());
+
+                    List<InformacionMensajeDTO> mensajesDTO = mensajes.stream()
                             .map(this::convertirMensaje)
                             .collect(Collectors.toList());
-                    
-                    LocalDateTime ultimoMensaje = chat.getMensajes().stream()
+
+                    LocalDateTime ultimoMensaje = mensajes.stream()
                             .map(Mensaje::getFecha)
                             .max(LocalDateTime::compareTo)
                             .orElse(null);
-                    
+
                     return new InformacionChatDTO(
                             chat.getId(),
                             chat.getEstudiante1Id(),
@@ -172,7 +184,7 @@ public class ChatServiceImpl implements ChatService {
 
     private InformacionMensajeDTO convertirMensaje(Mensaje mensaje) {
         return new InformacionMensajeDTO(
-                "",
+                mensaje.getId(),
                 mensaje.getRemitenteId(),
                 "",
                 mensaje.getDestinatarioId(),

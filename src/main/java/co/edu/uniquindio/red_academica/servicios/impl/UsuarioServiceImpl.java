@@ -50,4 +50,5 @@ public class UsuarioServiceImpl implements UsuarioService {
     public boolean existePorCorreo(String correo) {
         return usuarioRepository.existsByCorreo(correo);
     }
+
 }
