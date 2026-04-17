@@ -229,19 +229,18 @@ public class EstudianteServiceImpl implements EstudianteService {
 
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-        // 🔐 Validar contraseña
         if (!passwordEncoder.matches(dto.password(), estudiante.getContrasena())) {
             throw new Exception("La contraseña es incorrecta");
         }
 
-        // 🔥 Construir claims
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", estudiante.getId());
         claims.put("nombre", estudiante.getNombre());
-        claims.put("rol", "ESTUDIANTE"); // o lo que manejes
+        claims.put("rol", "ESTUDIANTE");
 
-        // 🔥 Generar token
         String token = jWTUtils.generarToken(estudiante.getCorreo(), claims);
+
+        System.out.println("TOKEN GENERADO: " + token);
 
         return new TokenDTO(token);
     }
@@ -267,17 +266,26 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     @Override
     public void iniciarRecuperacionPassword(String email) throws Exception {
+        System.out.println("1. Iniciando recuperación para: " + email);
+
         Estudiante estudiante = estudianteRepository.findByCorreo(email)
                 .orElseThrow(() -> new Exception("Correo no registrado"));
 
+        System.out.println("2. Estudiante encontrado: " + estudiante.getCorreo());
+
         String codigo = generarCodigoRecuperacion();
+        System.out.println("3. Código generado: " + codigo);
+
         estudiante.setCodigoRecuperacion(codigo);
         estudiante.setFechaExpiracionCodigoRecuperacion(
                 LocalDateTime.now().plusMinutes(CODIGO_RECUPERACION_EXPIRACION_MINUTOS)
         );
+
         estudianteRepository.save(estudiante);
+        System.out.println("4. Código guardado en BD");
 
         enviarCodigoRecuperacion(email, codigo);
+        System.out.println("5. Correo enviado correctamente");
     }
 
     @Override
@@ -324,16 +332,23 @@ public class EstudianteServiceImpl implements EstudianteService {
         return String.valueOf(numero);
     }
 
-    private void enviarCodigoRecuperacion(String correo, String codigo) {
-        if (mailSenderAvailable) {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("redacademicauq@gmail.com");
-            message.setTo(correo);
-            message.setSubject("Recuperación de contraseña Red Académica");
-            message.setText("Tu código es: " + codigo);
-            javaMailSender.send(message);
-        } else {
-            System.out.println("[RECUPERACION] Código para " + correo + ": " + codigo);
+    private void enviarCodigoRecuperacion(String correo, String codigo) throws Exception {
+        try {
+            if (mailSenderAvailable) {
+                SimpleMailMessage message = new SimpleMailMessage();
+                message.setFrom("redacademicauq@gmail.com");
+                message.setTo(correo);
+                message.setSubject("Recuperación de contraseña Red Académica");
+                message.setText("Tu código es: " + codigo);
+
+                javaMailSender.send(message);
+                System.out.println("5. Correo enviado correctamente");
+            } else {
+                System.out.println("[RECUPERACION] Código para " + correo + ": " + codigo);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new Exception("No fue posible enviar el correo de recuperación");
         }
     }
 }

@@ -7,6 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
@@ -23,7 +26,14 @@ public class AuthController {
     @PostMapping("/iniciar-sesion")
     public ResponseEntity<ResponseDTO<TokenDTO>> login(@RequestBody LoginDTO dto) throws Exception {
         TokenDTO estudiante = estudianteService.autenticar(dto);
-        return ResponseEntity.ok(new ResponseDTO<>("Inicio de sesión exitoso", estudiante));
+
+        System.out.println("TOKEN DTO: " + estudiante);
+        System.out.println("TOKEN: " + estudiante.token());
+
+        ResponseDTO<TokenDTO> response = new ResponseDTO<>("Inicio de sesión exitoso", estudiante);
+        System.out.println("RESPONSE DTO: " + response);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/recuperar-password")
