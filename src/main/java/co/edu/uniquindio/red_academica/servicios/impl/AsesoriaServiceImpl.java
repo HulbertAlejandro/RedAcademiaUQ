@@ -3,8 +3,12 @@ package co.edu.uniquindio.red_academica.servicios.impl;
 import co.edu.uniquindio.red_academica.dto.CrearAsesoriaDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionAsesoriaDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.Asesoria;
+import co.edu.uniquindio.red_academica.modelo.documentos.Estudiante;
+import co.edu.uniquindio.red_academica.modelo.documentos.Mentor;
 import co.edu.uniquindio.red_academica.modelo.enums.EstadoAsesoria;
 import co.edu.uniquindio.red_academica.repositorios.AsesoriaRepository;
+import co.edu.uniquindio.red_academica.repositorios.EstudianteRepository;
+import co.edu.uniquindio.red_academica.repositorios.MentorRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.AsesoriaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,10 +21,14 @@ import java.util.stream.Collectors;
 public class AsesoriaServiceImpl implements AsesoriaService {
 
     private final AsesoriaRepository asesoriaRepository;
+    private final MentorRepository mentorRepository;
+    private final EstudianteRepository estudianteRepository;
 
     @Autowired
-    public AsesoriaServiceImpl(AsesoriaRepository asesoriaRepository) {
+    public AsesoriaServiceImpl(AsesoriaRepository asesoriaRepository, MentorRepository mentorRepository, EstudianteRepository estudianteRepository) {
         this.asesoriaRepository = asesoriaRepository;
+        this.mentorRepository = mentorRepository;
+        this.estudianteRepository = estudianteRepository;
     }
 
     @Override
@@ -47,9 +55,9 @@ public class AsesoriaServiceImpl implements AsesoriaService {
         return new InformacionAsesoriaDTO(
                 asesoria.getId(),
                 asesoria.getSolicitanteId(),
-                "",
+                obtenerNombreSolicitante(asesoria.getSolicitanteId()),
                 asesoria.getAsesorId(),
-                "",
+                obtenerNombreAsesor(asesoria.getAsesorId()),
                 asesoria.getTema(),
                 asesoria.getFechaHora(),
                 asesoria.getDescripcion(),
@@ -64,9 +72,9 @@ public class AsesoriaServiceImpl implements AsesoriaService {
                 .map(asesoria -> new InformacionAsesoriaDTO(
                         asesoria.getId(),
                         asesoria.getSolicitanteId(),
-                        "",
+                        obtenerNombreSolicitante(asesoria.getSolicitanteId()),
                         asesoria.getAsesorId(),
-                        "",
+                        obtenerNombreAsesor(asesoria.getAsesorId()),
                         asesoria.getTema(),
                         asesoria.getFechaHora(),
                         asesoria.getDescripcion(),
@@ -107,9 +115,9 @@ public class AsesoriaServiceImpl implements AsesoriaService {
                 .map(asesoria -> new InformacionAsesoriaDTO(
                         asesoria.getId(),
                         asesoria.getSolicitanteId(),
-                        "",
+                        obtenerNombreSolicitante(asesoria.getSolicitanteId()),
                         asesoria.getAsesorId(),
-                        "",
+                        obtenerNombreAsesor(asesoria.getAsesorId()),
                         asesoria.getTema(),
                         asesoria.getFechaHora(),
                         asesoria.getDescripcion(),
@@ -119,6 +127,18 @@ public class AsesoriaServiceImpl implements AsesoriaService {
                 .collect(Collectors.toList());
     }
 
+    private String obtenerNombreAsesor(String asesorId) {
+        return mentorRepository.findById(asesorId)
+                .map(Mentor::getNombre)
+                .orElse("Sin asignar");
+    }
+
+    private String obtenerNombreSolicitante(String solicitanteId) {
+        return estudianteRepository.findById(solicitanteId)
+                .map(Estudiante::getNombre)
+                .orElse("Sin nombre");
+    }
+
     @Override
     public List<InformacionAsesoriaDTO> obtenerPorAsesor(String asesorId) throws Exception {
         List<Asesoria> asesorias = asesoriaRepository.findByAsesorId(asesorId);
@@ -126,9 +146,9 @@ public class AsesoriaServiceImpl implements AsesoriaService {
                 .map(asesoria -> new InformacionAsesoriaDTO(
                         asesoria.getId(),
                         asesoria.getSolicitanteId(),
-                        "",
+                        obtenerNombreSolicitante(asesoria.getSolicitanteId()),
                         asesoria.getAsesorId(),
-                        "",
+                        obtenerNombreAsesor(asesoria.getAsesorId()),
                         asesoria.getTema(),
                         asesoria.getFechaHora(),
                         asesoria.getDescripcion(),
@@ -145,9 +165,9 @@ public class AsesoriaServiceImpl implements AsesoriaService {
                 .map(asesoria -> new InformacionAsesoriaDTO(
                         asesoria.getId(),
                         asesoria.getSolicitanteId(),
-                        "",
+                        obtenerNombreSolicitante(asesoria.getSolicitanteId()),
                         asesoria.getAsesorId(),
-                        "",
+                        obtenerNombreAsesor(asesoria.getAsesorId()),
                         asesoria.getTema(),
                         asesoria.getFechaHora(),
                         asesoria.getDescripcion(),

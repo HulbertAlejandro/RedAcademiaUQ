@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.ToString;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -20,30 +19,30 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-@ToString
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Document(collection = "estudiantes")
 public class Estudiante extends Usuario {
-    
+
     @Field("puntos_participacion")
     private int puntosParticipacion;
-    
+
     private NivelParticipacion nivel;
-    
+
     @Field("contenidos_subidos")
     private List<String> contenidosSubidos;
-    
+
     private List<String> amigos;
-    
+
     @Field("grupos_estudio")
     private List<String> gruposEstudio;
-    
+
     @Field("grupos_rechazados")
     private List<String> gruposRechazados;
-    
+
     @Field("codigo_recuperacion")
     private String codigoRecuperacion;
-    
+
     @Field("fecha_expiracion_codigo_recuperacion")
     private LocalDateTime fechaExpiracionCodigoRecuperacion;
 }

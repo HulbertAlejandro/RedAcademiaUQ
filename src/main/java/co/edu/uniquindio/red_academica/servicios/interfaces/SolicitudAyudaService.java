@@ -1,12 +1,13 @@
 package co.edu.uniquindio.red_academica.servicios.interfaces;
 
 import co.edu.uniquindio.red_academica.dto.AtenderSolicitudDTO;
+import co.edu.uniquindio.red_academica.dto.CerrarSolicitudDTO;
 import co.edu.uniquindio.red_academica.dto.CrearSolicitudAyudaDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionSolicitudAyudaDTO;
 import co.edu.uniquindio.red_academica.dto.ResolverSolicitudDTO;
-import co.edu.uniquindio.red_academica.modelo.documentos.SolicitudAyuda;
 import co.edu.uniquindio.red_academica.modelo.enums.EstadoSolicitud;
 import co.edu.uniquindio.red_academica.modelo.enums.TEMA;
+
 import java.util.List;
 
 public interface SolicitudAyudaService {
@@ -29,7 +30,11 @@ public interface SolicitudAyudaService {
 
     List<InformacionSolicitudAyudaDTO> obtenerPorUrgencia() throws Exception;
 
+    List<InformacionSolicitudAyudaDTO> obtenerActivas() throws Exception;
+
     void atenderSolicitud(AtenderSolicitudDTO dto) throws Exception;
 
     void resolverSolicitud(ResolverSolicitudDTO dto) throws Exception;
+
+    void cerrarSolicitud(CerrarSolicitudDTO dto) throws Exception;
 }

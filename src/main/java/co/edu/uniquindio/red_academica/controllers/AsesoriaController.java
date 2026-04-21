@@ -2,6 +2,7 @@ package co.edu.uniquindio.red_academica.controllers;
 
 import co.edu.uniquindio.red_academica.dto.*;
 import co.edu.uniquindio.red_academica.servicios.interfaces.AsesoriaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +16,8 @@ public class AsesoriaController {
 
     private final AsesoriaService asesoriaService;
 
-    @PostMapping
-    public ResponseEntity<ResponseDTO<String>> crear(@RequestBody CrearAsesoriaDTO dto) throws Exception {
+    @PostMapping("/crear-asesoria")
+    public ResponseEntity<ResponseDTO<String>> crear(@Valid @RequestBody CrearAsesoriaDTO dto) throws Exception {
         String id = asesoriaService.crear(dto);
         return ResponseEntity.ok(new ResponseDTO<>("Asesoría creada exitosamente", id));
     }
@@ -27,7 +28,7 @@ public class AsesoriaController {
         return ResponseEntity.ok(new ResponseDTO<>("Asesoría encontrada", asesoria));
     }
 
-    @GetMapping
+    @GetMapping("/obtener-asesorias")
     public ResponseEntity<ResponseDTO<List<InformacionAsesoriaDTO>>> obtenerTodos() {
         List<InformacionAsesoriaDTO> asesorias = asesoriaService.obtenerTodos();
         return ResponseEntity.ok(new ResponseDTO<>("Lista de asesorías", asesorias));

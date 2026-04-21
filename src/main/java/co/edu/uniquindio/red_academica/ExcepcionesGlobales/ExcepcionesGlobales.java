@@ -2,6 +2,7 @@ package co.edu.uniquindio.red_academica.ExcepcionesGlobales;
 
 import co.edu.uniquindio.red_academica.dto.MensajeDTO;
 import co.edu.uniquindio.red_academica.dto.ValidacionDTO;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -35,7 +36,6 @@ public class ExcepcionesGlobales {
 
         return ResponseEntity.badRequest().body( new MensajeDTO<>(true, errores) );
     }
-
 
 }
 

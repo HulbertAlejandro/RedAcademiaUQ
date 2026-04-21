@@ -3,9 +3,11 @@ package co.edu.uniquindio.red_academica.servicios.impl;
 import co.edu.uniquindio.red_academica.dto.CrearMentorDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionMentorDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.Mentor;
+import co.edu.uniquindio.red_academica.modelo.enums.Rol;
 import co.edu.uniquindio.red_academica.repositorios.MentorRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.MentorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -21,10 +23,13 @@ public class MentorServiceImpl implements MentorService {
     public MentorServiceImpl(MentorRepository mentorRepository) {
         this.mentorRepository = mentorRepository;
     }
+    
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
     public String crear(CrearMentorDTO dto) throws Exception {
-        if (existePorCorreo(dto.email())) {
+
+        if (mentorRepository.existsByCorreo(dto.email())) {
             throw new Exception("El correo ya está registrado");
         }
 
@@ -32,11 +37,18 @@ public class MentorServiceImpl implements MentorService {
         mentor.setId(java.util.UUID.randomUUID().toString());
         mentor.setNombre(dto.nombre());
         mentor.setCorreo(dto.email());
-        mentor.setContrasena(dto.password());
+
+        // 🔐 AQUÍ está el cambio importante
+        mentor.setContrasena(passwordEncoder.encode(dto.password()));
+
         mentor.setEspecialidad(dto.especialidad());
         mentor.setHorariosDisponibles(new ArrayList<>());
 
+        // 👇 importante si ya estás usando roles
+        mentor.setRol(Rol.ASESOR);
+
         Mentor guardado = mentorRepository.save(mentor);
+
         return guardado.getId();
     }
 

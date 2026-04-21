@@ -15,7 +15,7 @@ public class MentorController {
 
     private final MentorService mentorService;
 
-    @PostMapping
+    @PostMapping("/crear-mentor")
     public ResponseEntity<ResponseDTO<String>> crear(@RequestBody CrearMentorDTO dto) throws Exception {
         String id = mentorService.crear(dto);
         return ResponseEntity.ok(new ResponseDTO<>("Mentor creado exitosamente", id));
@@ -27,8 +27,14 @@ public class MentorController {
         return ResponseEntity.ok(new ResponseDTO<>("Mentor encontrado", mentor));
     }
 
-    @GetMapping
+    @GetMapping("/obtener-mentores")
     public ResponseEntity<ResponseDTO<List<InformacionMentorDTO>>> obtenerTodos() {
+        List<InformacionMentorDTO> mentores = mentorService.obtenerTodos();
+        return ResponseEntity.ok(new ResponseDTO<>("Lista de mentores", mentores));
+    }
+
+    @GetMapping("/listar-mentores-admin")
+    public ResponseEntity<ResponseDTO<List<InformacionMentorDTO>>> obtenerMentores() {
         List<InformacionMentorDTO> mentores = mentorService.obtenerTodos();
         return ResponseEntity.ok(new ResponseDTO<>("Lista de mentores", mentores));
     }

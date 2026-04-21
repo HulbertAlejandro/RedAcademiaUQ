@@ -2,9 +2,15 @@ package co.edu.uniquindio.red_academica.servicios.impl;
 
 import co.edu.uniquindio.red_academica.config.JWTUtils;
 import co.edu.uniquindio.red_academica.dto.*;
+import co.edu.uniquindio.red_academica.modelo.documentos.Administrador;
 import co.edu.uniquindio.red_academica.modelo.documentos.Estudiante;
+import co.edu.uniquindio.red_academica.modelo.documentos.Mentor;
+import co.edu.uniquindio.red_academica.modelo.documentos.Usuario;
 import co.edu.uniquindio.red_academica.modelo.enums.NivelParticipacion;
+import co.edu.uniquindio.red_academica.modelo.enums.Rol;
+import co.edu.uniquindio.red_academica.repositorios.AdministradorRepository;
 import co.edu.uniquindio.red_academica.repositorios.EstudianteRepository;
+import co.edu.uniquindio.red_academica.repositorios.MentorRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.EstudianteService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,14 +37,18 @@ public class EstudianteServiceImpl implements EstudianteService {
     // 🔐 Encoder global
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JWTUtils jWTUtils;
+    private final AdministradorRepository administradorRepository;
+    private final MentorRepository mentorRepository;
 
     @Autowired
     public EstudianteServiceImpl(EstudianteRepository estudianteRepository,
-                                 ObjectProvider<JavaMailSender> javaMailSenderProvider, JWTUtils jWTUtils) {
+                                 ObjectProvider<JavaMailSender> javaMailSenderProvider, JWTUtils jWTUtils, AdministradorRepository administradorRepository, MentorRepository mentorRepository) {
         this.estudianteRepository = estudianteRepository;
         this.javaMailSender = javaMailSenderProvider.getIfAvailable();
         this.mailSenderAvailable = this.javaMailSender != null;
         this.jWTUtils = jWTUtils;
+        this.administradorRepository = administradorRepository;
+        this.mentorRepository = mentorRepository;
     }
 
     @Override
@@ -51,6 +61,7 @@ public class EstudianteServiceImpl implements EstudianteService {
         estudiante.setId(java.util.UUID.randomUUID().toString());
         estudiante.setNombre(dto.nombre());
         estudiante.setCorreo(dto.email());
+        estudiante.setRol(Rol.ESTUDIANTE);
 
         // 🔐 ENCRIPTAR
         estudiante.setContrasena(passwordEncoder.encode(dto.password()));
@@ -223,26 +234,45 @@ public class EstudianteServiceImpl implements EstudianteService {
 
     @Override
     public TokenDTO autenticar(LoginDTO dto) throws Exception {
+        Usuario usuario = buscarUsuarioPorCorreo(dto.email());
 
-        Estudiante estudiante = estudianteRepository.findByCorreo(dto.email())
-                .orElseThrow(() -> new Exception("Correo o contraseña incorrectos"));
+        if (usuario == null) {
+            throw new Exception("Correo o contraseña incorrectos");
+        }
 
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-        if (!passwordEncoder.matches(dto.password(), estudiante.getContrasena())) {
-            throw new Exception("La contraseña es incorrecta");
+        if (!passwordEncoder.matches(dto.password(), usuario.getContrasena())) {
+            throw new Exception("Correo o contraseña incorrectos");
+        }
+
+        if (usuario.getRol() == null) {
+            throw new Exception("El usuario no tiene rol asignado");
         }
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", estudiante.getId());
-        claims.put("nombre", estudiante.getNombre());
-        claims.put("rol", "ESTUDIANTE");
+        claims.put("id", usuario.getId());
+        claims.put("nombre", usuario.getNombre());
+        claims.put("rol", usuario.getRol().name());
 
-        String token = jWTUtils.generarToken(estudiante.getCorreo(), claims);
-
-        System.out.println("TOKEN GENERADO: " + token);
+        String token = jWTUtils.generarToken(usuario.getCorreo(), claims);
 
         return new TokenDTO(token);
+    }
+
+    private Usuario buscarUsuarioPorCorreo(String correo) {
+        Optional<Estudiante> estudiante = estudianteRepository.findByCorreo(correo);
+        if (estudiante.isPresent()) {
+            return estudiante.get();
+        }
+
+        Optional<Mentor> mentor = mentorRepository.findByCorreo(correo);
+        if (mentor.isPresent()) {
+            return mentor.get();
+        }
+
+        Optional<Administrador> administrador = administradorRepository.findByCorreo(correo);
+        return administrador.orElse(null);
     }
 
     @Override

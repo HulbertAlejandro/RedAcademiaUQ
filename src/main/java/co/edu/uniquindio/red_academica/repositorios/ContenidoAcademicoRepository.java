@@ -13,15 +13,7 @@ public interface ContenidoAcademicoRepository extends MongoRepository<ContenidoA
 
     List<ContenidoAcademico> findByTema(TEMA tema);
 
-    List<ContenidoAcademico> findByAutor(String autorId);
-
-    List<ContenidoAcademico> findByTipoContenido(TipoContenido tipo);
+    List<ContenidoAcademico> findByTipoContenido(TipoContenido tipoContenido);
 
     List<ContenidoAcademico> findByTituloContainingIgnoreCase(String titulo);
-
-    List<ContenidoAcademico> findByAutorAndTema(String autorId, TEMA tema);
-
-    List<ContenidoAcademico> findByValoracionesEstudianteId(String estudianteId);
-
-    List<ContenidoAcademico> findByFechaCreacionBetween(java.time.LocalDateTime inicio, java.time.LocalDateTime fin);
 }

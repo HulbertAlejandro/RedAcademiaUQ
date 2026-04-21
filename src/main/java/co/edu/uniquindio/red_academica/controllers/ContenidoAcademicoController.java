@@ -1,94 +1,100 @@
 package co.edu.uniquindio.red_academica.controllers;
 
-import co.edu.uniquindio.red_academica.dto.*;
+import co.edu.uniquindio.red_academica.dto.CrearContenidoAcademicoDTO;
+import co.edu.uniquindio.red_academica.dto.MensajeDTO;
+import co.edu.uniquindio.red_academica.modelo.documentos.ContenidoAcademico;
+import co.edu.uniquindio.red_academica.modelo.enums.TipoContenido;
+import co.edu.uniquindio.red_academica.modelo.enums.TEMA;
 import co.edu.uniquindio.red_academica.servicios.interfaces.ContenidoAcademicoService;
+import com.mongodb.client.gridfs.model.GridFSFile;
 import lombok.RequiredArgsConstructor;
+import org.bson.types.ObjectId;
+import org.springframework.core.io.Resource;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
+import org.springframework.data.mongodb.gridfs.GridFsTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
-@RequiredArgsConstructor
 @RequestMapping("/api/contenidos-academicos")
+@RequiredArgsConstructor
 public class ContenidoAcademicoController {
 
-    private final ContenidoAcademicoService contenidoAcademicoService;
+    private final ContenidoAcademicoService contenidoService;
+    private final GridFsTemplate gridFsTemplate;
 
-    @PostMapping
-    public ResponseEntity<ResponseDTO<String>> crear(@RequestBody CrearContenidoAcademicoDTO dto) throws Exception {
-        String id = contenidoAcademicoService.crear(dto);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenido académico creado exitosamente", id));
+    @PostMapping(value = "/subir", consumes = "multipart/form-data")
+    public ResponseEntity<MensajeDTO<String>> subirContenido(
+            @RequestParam("titulo") String titulo,
+            @RequestParam("tema") TEMA tema,
+            @RequestParam("autor") String autor,
+            @RequestParam("tipoContenido") TipoContenido tipoContenido,
+            @RequestParam("archivo") MultipartFile archivo
+    ) throws Exception {
+
+        CrearContenidoAcademicoDTO dto = new CrearContenidoAcademicoDTO(
+                titulo, tema, autor, tipoContenido
+        );
+
+        contenidoService.subirContenido(dto, archivo);
+
+        return ResponseEntity.ok(
+                new MensajeDTO<>(false, "Contenido académico subido correctamente")
+        );
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ResponseDTO<InformacionContenidoAcademicoDTO>> obtenerPorId(@PathVariable String id) throws Exception {
-        InformacionContenidoAcademicoDTO contenido = contenidoAcademicoService.obtenerPorId(id);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenido encontrado", contenido));
+    @GetMapping("/obtener/{id}")
+    public ResponseEntity<MensajeDTO<ContenidoAcademico>> obtenerContenido(@PathVariable String id) throws Exception {
+        return ResponseEntity.ok(
+                new MensajeDTO<>(false, contenidoService.obtenerContenidoPorId(id))
+        );
     }
 
     @GetMapping("/obtener-contenidos")
-    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> obtenerTodos() {
-        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.obtenerTodos();
-        return ResponseEntity.ok(new ResponseDTO<>("Lista de contenidos", contenidos));
+    public ResponseEntity<MensajeDTO<List<ContenidoAcademico>>> obtenerTodosContenidos() {
+        return ResponseEntity.ok(
+                new MensajeDTO<>(false, contenidoService.obtenerTodosContenidos())
+        );
     }
 
-    @PostMapping("/buscar")
-    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> buscar(@RequestBody BuscarContenidoDTO dto) throws Exception {
-        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.buscar(dto);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenidos encontrados", contenidos));
-    }
+    @GetMapping("/archivo/{id}")
+    public ResponseEntity<Resource> obtenerArchivo(@PathVariable String id) throws Exception {
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ResponseDTO<InformacionContenidoAcademicoDTO>> actualizar(@PathVariable String id, @RequestBody CrearContenidoAcademicoDTO dto) throws Exception {
-        InformacionContenidoAcademicoDTO contenido = contenidoAcademicoService.actualizar(id, dto);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenido actualizado", contenido));
-    }
+        ContenidoAcademico contenido = contenidoService.obtenerContenidoPorId(id);
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseDTO<String>> eliminar(@PathVariable String id) throws Exception {
-        contenidoAcademicoService.eliminar(id);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenido eliminado", null));
-    }
+        if (contenido.getArchivoId() == null || contenido.getArchivoId().isBlank()) {
+            throw new Exception("El contenido no tiene un archivo asociado");
+        }
 
-    @GetMapping("/buscar/tema/{tema}")
-    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> buscarPorTema(@PathVariable String tema) throws Exception {
-        co.edu.uniquindio.red_academica.modelo.enums.TEMA temaEnum = co.edu.uniquindio.red_academica.modelo.enums.TEMA.valueOf(tema.toUpperCase());
-        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.buscarPorTema(temaEnum);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenidos por tema", contenidos));
-    }
+        GridFSFile file = gridFsTemplate.findOne(
+                Query.query(Criteria.where("_id").is(new ObjectId(contenido.getArchivoId())))
+        );
 
-    @GetMapping("/buscar/autor/{autorId}")
-    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> buscarPorAutor(@PathVariable String autorId) throws Exception {
-        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.buscarPorAutor(autorId);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenidos por autor", contenidos));
-    }
+        if (file == null) {
+            throw new Exception("Archivo no encontrado");
+        }
 
-    @GetMapping("/buscar/tipo/{tipo}")
-    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> buscarPorTipo(@PathVariable String tipo) throws Exception {
-        co.edu.uniquindio.red_academica.modelo.enums.TipoContenido tipoEnum = co.edu.uniquindio.red_academica.modelo.enums.TipoContenido.valueOf(tipo.toUpperCase());
-        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.buscarPorTipo(tipoEnum);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenidos por tipo", contenidos));
-    }
+        GridFsResource resource = gridFsTemplate.getResource(file);
 
-    @GetMapping("/buscar/titulo")
-    public ResponseEntity<ResponseDTO<List<InformacionContenidoAcademicoDTO>>> buscarPorTitulo(@RequestParam String titulo) throws Exception {
-        List<InformacionContenidoAcademicoDTO> contenidos = contenidoAcademicoService.buscarPorTitulo(titulo);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenidos por título", contenidos));
-    }
+        String contentType = "application/octet-stream";
+        if (file.getMetadata() != null) {
+            if (file.getMetadata().get("_contentType") != null) {
+                contentType = file.getMetadata().getString("_contentType");
+            } else if (file.getMetadata().get("contentType") != null) {
+                contentType = file.getMetadata().getString("contentType");
+            }
+        }
 
-    @PostMapping("/valoracion")
-    public ResponseEntity<ResponseDTO<String>> agregarValoracion(@RequestBody CrearValoracionDTO dto) throws Exception {
-        contenidoAcademicoService.agregarValoracion(dto);
-        return ResponseEntity.ok(new ResponseDTO<>("Valoración agregada", null));
-    }
-
-    @PostMapping("/guardar")
-    public ResponseEntity<ResponseDTO<String>> guardarContenido(@RequestParam String estudianteId, @RequestParam String contenidoId) throws Exception {
-        contenidoAcademicoService.guardarContenido(estudianteId, contenidoId);
-        return ResponseEntity.ok(new ResponseDTO<>("Contenido guardado", null));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFilename() + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
     }
 }

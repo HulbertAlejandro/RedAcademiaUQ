@@ -2,6 +2,7 @@ package co.edu.uniquindio.red_academica.controllers;
 
 import co.edu.uniquindio.red_academica.dto.*;
 import co.edu.uniquindio.red_academica.servicios.interfaces.SolicitudAyudaService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +16,8 @@ public class SolicitudAyudaController {
 
     private final SolicitudAyudaService solicitudAyudaService;
 
-    @PostMapping
-    public ResponseEntity<ResponseDTO<String>> crear(@RequestBody CrearSolicitudAyudaDTO dto) throws Exception {
+    @PostMapping("/crear-solicitud")
+    public ResponseEntity<ResponseDTO<String>> crear(@Valid @RequestBody CrearSolicitudAyudaDTO dto) throws Exception {
         String id = solicitudAyudaService.crear(dto);
         return ResponseEntity.ok(new ResponseDTO<>("Solicitud de ayuda creada exitosamente", id));
     }
@@ -31,6 +32,11 @@ public class SolicitudAyudaController {
     public ResponseEntity<ResponseDTO<List<InformacionSolicitudAyudaDTO>>> obtenerTodos() {
         List<InformacionSolicitudAyudaDTO> solicitudes = solicitudAyudaService.obtenerTodos();
         return ResponseEntity.ok(new ResponseDTO<>("Lista de solicitudes", solicitudes));
+    }
+
+    @GetMapping("/activas")
+    public ResponseEntity<ResponseDTO<List<InformacionSolicitudAyudaDTO>>> obtenerActivas() throws Exception {
+        return ResponseEntity.ok(new ResponseDTO<>("Solicitudes activas", solicitudAyudaService.obtenerActivas()));
     }
 
     @PutMapping("/{id}")
@@ -80,6 +86,12 @@ public class SolicitudAyudaController {
     @PostMapping("/resolver")
     public ResponseEntity<ResponseDTO<String>> resolverSolicitud(@RequestBody ResolverSolicitudDTO dto) throws Exception {
         solicitudAyudaService.resolverSolicitud(dto);
-        return ResponseEntity.ok(new ResponseDTO<>("Solicitud resuelta", null));
+        return ResponseEntity.ok(new ResponseDTO<>("Solicitud actualizada con contenido", null));
+    }
+
+    @PostMapping("/cerrar")
+    public ResponseEntity<ResponseDTO<String>> cerrarSolicitud(@Valid @RequestBody CerrarSolicitudDTO dto) throws Exception {
+        solicitudAyudaService.cerrarSolicitud(dto);
+        return ResponseEntity.ok(new ResponseDTO<>("Solicitud cerrada correctamente", null));
     }
 }

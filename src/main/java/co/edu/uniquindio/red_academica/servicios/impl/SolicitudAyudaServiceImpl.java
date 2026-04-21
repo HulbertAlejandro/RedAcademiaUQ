@@ -1,28 +1,36 @@
 package co.edu.uniquindio.red_academica.servicios.impl;
 
 import co.edu.uniquindio.red_academica.dto.AtenderSolicitudDTO;
+import co.edu.uniquindio.red_academica.dto.CerrarSolicitudDTO;
 import co.edu.uniquindio.red_academica.dto.CrearSolicitudAyudaDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionSolicitudAyudaDTO;
 import co.edu.uniquindio.red_academica.dto.ResolverSolicitudDTO;
+import co.edu.uniquindio.red_academica.modelo.documentos.Estudiante;
 import co.edu.uniquindio.red_academica.modelo.documentos.SolicitudAyuda;
 import co.edu.uniquindio.red_academica.modelo.enums.EstadoSolicitud;
+import co.edu.uniquindio.red_academica.repositorios.EstudianteRepository;
 import co.edu.uniquindio.red_academica.repositorios.SolicitudAyudaRepository;
 import co.edu.uniquindio.red_academica.servicios.interfaces.SolicitudAyudaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class SolicitudAyudaServiceImpl implements SolicitudAyudaService {
 
     private final SolicitudAyudaRepository solicitudRepository;
+    private final EstudianteRepository estudianteRepository;
 
     @Autowired
-    public SolicitudAyudaServiceImpl(SolicitudAyudaRepository solicitudRepository) {
+    public SolicitudAyudaServiceImpl(
+            SolicitudAyudaRepository solicitudRepository,
+            EstudianteRepository estudianteRepository
+    ) {
         this.solicitudRepository = solicitudRepository;
+        this.estudianteRepository = estudianteRepository;
     }
 
     @Override
@@ -33,7 +41,7 @@ public class SolicitudAyudaServiceImpl implements SolicitudAyudaService {
         solicitud.setUrgencia(dto.urgencia());
         solicitud.setSolicitanteId(dto.solicitanteId());
         solicitud.setDescripcion(dto.descripcion());
-        solicitud.setEstado(EstadoSolicitud.PENDIENTE);
+        solicitud.setEstado(EstadoSolicitud.ABIERTA);
         solicitud.setFechaCreacion(LocalDateTime.now());
 
         SolicitudAyuda guardada = solicitudRepository.save(solicitud);
@@ -45,36 +53,14 @@ public class SolicitudAyudaServiceImpl implements SolicitudAyudaService {
         SolicitudAyuda solicitud = solicitudRepository.findById(id)
                 .orElseThrow(() -> new Exception("Solicitud no encontrada"));
 
-        return new InformacionSolicitudAyudaDTO(
-                solicitud.getId(),
-                solicitud.getTema(),
-                solicitud.getUrgencia(),
-                solicitud.getSolicitanteId(),
-                "",
-                solicitud.getDescripcion(),
-                solicitud.getEstado(),
-                solicitud.getFechaCreacion(),
-                solicitud.getIdContenidoResuelto(),
-                ""
-        );
+        return mapToDTO(solicitud);
     }
 
     @Override
     public List<InformacionSolicitudAyudaDTO> obtenerTodos() {
         return solicitudRepository.findAll().stream()
-                .map(solicitud -> new InformacionSolicitudAyudaDTO(
-                        solicitud.getId(),
-                        solicitud.getTema(),
-                        solicitud.getUrgencia(),
-                        solicitud.getSolicitanteId(),
-                        "",
-                        solicitud.getDescripcion(),
-                        solicitud.getEstado(),
-                        solicitud.getFechaCreacion(),
-                        solicitud.getIdContenidoResuelto(),
-                        ""
-                ))
-                .collect(Collectors.toList());
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
@@ -101,78 +87,44 @@ public class SolicitudAyudaServiceImpl implements SolicitudAyudaService {
 
     @Override
     public List<InformacionSolicitudAyudaDTO> obtenerPorSolicitante(String solicitanteId) throws Exception {
-        List<SolicitudAyuda> solicitudes = solicitudRepository.findBySolicitanteId(solicitanteId);
-        return solicitudes.stream()
-                .map(solicitud -> new InformacionSolicitudAyudaDTO(
-                        solicitud.getId(),
-                        solicitud.getTema(),
-                        solicitud.getUrgencia(),
-                        solicitud.getSolicitanteId(),
-                        "",
-                        solicitud.getDescripcion(),
-                        solicitud.getEstado(),
-                        solicitud.getFechaCreacion(),
-                        solicitud.getIdContenidoResuelto(),
-                        ""
-                ))
-                .collect(Collectors.toList());
+        return solicitudRepository.findBySolicitanteId(solicitanteId).stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
     public List<InformacionSolicitudAyudaDTO> obtenerPorTema(co.edu.uniquindio.red_academica.modelo.enums.TEMA tema) throws Exception {
-        List<SolicitudAyuda> solicitudes = solicitudRepository.findByTema(tema);
-        return solicitudes.stream()
-                .map(solicitud -> new InformacionSolicitudAyudaDTO(
-                        solicitud.getId(),
-                        solicitud.getTema(),
-                        solicitud.getUrgencia(),
-                        solicitud.getSolicitanteId(),
-                        "",
-                        solicitud.getDescripcion(),
-                        solicitud.getEstado(),
-                        solicitud.getFechaCreacion(),
-                        solicitud.getIdContenidoResuelto(),
-                        ""
-                ))
-                .collect(Collectors.toList());
+        return solicitudRepository.findByTema(tema).stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
     public List<InformacionSolicitudAyudaDTO> obtenerPorEstado(EstadoSolicitud estado) throws Exception {
-        List<SolicitudAyuda> solicitudes = solicitudRepository.findByEstado(estado);
-        return solicitudes.stream()
-                .map(solicitud -> new InformacionSolicitudAyudaDTO(
-                        solicitud.getId(),
-                        solicitud.getTema(),
-                        solicitud.getUrgencia(),
-                        solicitud.getSolicitanteId(),
-                        "",
-                        solicitud.getDescripcion(),
-                        solicitud.getEstado(),
-                        solicitud.getFechaCreacion(),
-                        solicitud.getIdContenidoResuelto(),
-                        ""
-                ))
-                .collect(Collectors.toList());
+        return solicitudRepository.findByEstado(estado).stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
     public List<InformacionSolicitudAyudaDTO> obtenerPorUrgencia() throws Exception {
-        List<SolicitudAyuda> solicitudes = solicitudRepository.findByUrgenciaGreaterThanEqualOrderByUrgenciaDesc(1);
-        return solicitudes.stream()
-                .map(solicitud -> new InformacionSolicitudAyudaDTO(
-                        solicitud.getId(),
-                        solicitud.getTema(),
-                        solicitud.getUrgencia(),
-                        solicitud.getSolicitanteId(),
-                        "",
-                        solicitud.getDescripcion(),
-                        solicitud.getEstado(),
-                        solicitud.getFechaCreacion(),
-                        solicitud.getIdContenidoResuelto(),
-                        ""
-                ))
-                .collect(Collectors.toList());
+        return solicitudRepository.findByUrgenciaGreaterThanEqualOrderByUrgenciaDesc(1).stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    @Override
+    public List<InformacionSolicitudAyudaDTO> obtenerActivas() throws Exception {
+        List<SolicitudAyuda> abiertas = solicitudRepository.findByEstado(EstadoSolicitud.ABIERTA);
+        List<SolicitudAyuda> enProceso = solicitudRepository.findByEstado(EstadoSolicitud.EN_PROCESO);
+
+        List<SolicitudAyuda> todas = new ArrayList<>();
+        todas.addAll(abiertas);
+        todas.addAll(enProceso);
+
+        return todas.stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
     @Override
@@ -180,12 +132,14 @@ public class SolicitudAyudaServiceImpl implements SolicitudAyudaService {
         SolicitudAyuda solicitud = solicitudRepository.findById(dto.solicitudId())
                 .orElseThrow(() -> new Exception("Solicitud no encontrada"));
 
-        if (solicitud.getEstado() != EstadoSolicitud.PENDIENTE) {
-            throw new Exception("La solicitud ya está siendo atendida o fue resuelta");
+        if (solicitud.getEstado() == EstadoSolicitud.CERRADA) {
+            throw new Exception("La solicitud ya fue cerrada");
         }
 
-        solicitud.setEstado(EstadoSolicitud.EN_PROCESO);
-        solicitudRepository.save(solicitud);
+        if (solicitud.getEstado() == EstadoSolicitud.ABIERTA) {
+            solicitud.setEstado(EstadoSolicitud.EN_PROCESO);
+            solicitudRepository.save(solicitud);
+        }
     }
 
     @Override
@@ -193,12 +147,45 @@ public class SolicitudAyudaServiceImpl implements SolicitudAyudaService {
         SolicitudAyuda solicitud = solicitudRepository.findById(dto.solicitudId())
                 .orElseThrow(() -> new Exception("Solicitud no encontrada"));
 
-        if (solicitud.getEstado() != EstadoSolicitud.EN_PROCESO) {
-            throw new Exception("La solicitud debe estar en proceso para ser resuelta");
+        if (solicitud.getEstado() == EstadoSolicitud.CERRADA) {
+            throw new Exception("La solicitud ya está cerrada");
         }
 
-        solicitud.setEstado(EstadoSolicitud.RESUELTA);
         solicitud.setIdContenidoResuelto(dto.contenidoId());
         solicitudRepository.save(solicitud);
+    }
+
+    @Override
+    public void cerrarSolicitud(CerrarSolicitudDTO dto) throws Exception {
+        SolicitudAyuda solicitud = solicitudRepository.findById(dto.solicitudId())
+                .orElseThrow(() -> new Exception("Solicitud no encontrada"));
+
+        if (!solicitud.getSolicitanteId().equals(dto.solicitanteId())) {
+            throw new Exception("No tienes permiso para cerrar esta solicitud");
+        }
+
+        solicitud.setEstado(EstadoSolicitud.CERRADA);
+        solicitudRepository.save(solicitud);
+    }
+
+    private InformacionSolicitudAyudaDTO mapToDTO(SolicitudAyuda solicitud) {
+        return new InformacionSolicitudAyudaDTO(
+                solicitud.getId(),
+                solicitud.getTema(),
+                solicitud.getUrgencia(),
+                solicitud.getSolicitanteId(),
+                obtenerNombreSolicitante(solicitud.getSolicitanteId()),
+                solicitud.getDescripcion(),
+                solicitud.getEstado(),
+                solicitud.getFechaCreacion(),
+                solicitud.getIdContenidoResuelto(),
+                ""
+        );
+    }
+
+    private String obtenerNombreSolicitante(String solicitanteId) {
+        return estudianteRepository.findById(solicitanteId)
+                .map(Estudiante::getNombre)
+                .orElse("Usuario no encontrado");
     }
 }
