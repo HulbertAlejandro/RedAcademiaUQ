@@ -1,5 +1,6 @@
 package co.edu.uniquindio.red_academica.controllers;
 
+import co.edu.uniquindio.red_academica.dto.BuscarContenidoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearContenidoAcademicoDTO;
 import co.edu.uniquindio.red_academica.dto.MensajeDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.ContenidoAcademico;
@@ -96,5 +97,12 @@ public class ContenidoAcademicoController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getFilename() + "\"")
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
+    }
+
+    @PostMapping("/buscar")
+    public ResponseEntity<MensajeDTO<List<ContenidoAcademico>>> buscarContenidos(@RequestBody BuscarContenidoDTO dto) {
+        return ResponseEntity.ok(
+                new MensajeDTO<>(false, contenidoService.buscarContenidos(dto))
+        );
     }
 }

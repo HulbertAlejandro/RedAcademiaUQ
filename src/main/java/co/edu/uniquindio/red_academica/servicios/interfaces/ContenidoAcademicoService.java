@@ -1,5 +1,6 @@
 package co.edu.uniquindio.red_academica.servicios.interfaces;
 
+import co.edu.uniquindio.red_academica.dto.BuscarContenidoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearContenidoAcademicoDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.ContenidoAcademico;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,4 +16,6 @@ public interface ContenidoAcademicoService {
     List<ContenidoAcademico> obtenerTodosContenidos();
 
     byte[] obtenerArchivoContenido(String id) throws Exception;
+
+    List<ContenidoAcademico> buscarContenidos(BuscarContenidoDTO dto);
 }

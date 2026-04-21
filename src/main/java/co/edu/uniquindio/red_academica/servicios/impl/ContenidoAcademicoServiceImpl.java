@@ -1,5 +1,6 @@
 package co.edu.uniquindio.red_academica.servicios.impl;
 
+import co.edu.uniquindio.red_academica.dto.BuscarContenidoDTO;
 import co.edu.uniquindio.red_academica.dto.CrearContenidoAcademicoDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.ContenidoAcademico;
 import co.edu.uniquindio.red_academica.modelo.enums.TipoContenido;
@@ -135,5 +136,21 @@ public class ContenidoAcademicoServiceImpl implements ContenidoAcademicoService 
         if (archivo.getSize() > maxSize) {
             throw new Exception("El archivo supera el tamaño máximo permitido de 10 MB");
         }
+    }
+
+    @Override
+    public List<ContenidoAcademico> buscarContenidos(BuscarContenidoDTO dto) {
+        List<ContenidoAcademico> contenidos = contenidoRepository.findAll();
+
+        return contenidos.stream()
+                .filter(c -> dto.tema() == null || dto.tema().isBlank() ||
+                        (c.getTema() != null && c.getTema().name().equalsIgnoreCase(dto.tema())))
+                .filter(c -> dto.tipoContenido() == null || dto.tipoContenido().isBlank() ||
+                        (c.getTipoContenido() != null && c.getTipoContenido().name().equalsIgnoreCase(dto.tipoContenido())))
+                .filter(c -> dto.autor() == null || dto.autor().isBlank() ||
+                        (c.getAutor() != null && c.getAutor().toLowerCase().contains(dto.autor().toLowerCase())))
+                .filter(c -> dto.textoBusqueda() == null || dto.textoBusqueda().isBlank() ||
+                        (c.getTitulo() != null && c.getTitulo().toLowerCase().contains(dto.textoBusqueda().toLowerCase())))
+                .toList();
     }
 }
