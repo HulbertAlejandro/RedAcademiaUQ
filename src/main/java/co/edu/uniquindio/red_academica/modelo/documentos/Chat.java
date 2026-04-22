@@ -27,11 +27,11 @@ public class Chat {
     @EqualsAndHashCode.Include
     private String id;
 
-    @Field("estudiante1_id")
-    private String estudiante1Id;
+    @Field("usuario1_id")
+    private String usuario1Id;
 
-    @Field("estudiante2_id")
-    private String estudiante2Id;
+    @Field("usuario2_id")
+    private String usuario2Id;
 
     @Field("fecha_creacion")
     private LocalDateTime fechaCreacion;

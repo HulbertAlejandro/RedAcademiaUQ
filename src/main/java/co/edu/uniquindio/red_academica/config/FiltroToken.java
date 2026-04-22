@@ -43,7 +43,7 @@ public class FiltroToken extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
 
         // Rutas públicas: no requieren token
-        if (requestURI.startsWith("/api/auth/") || requestURI.startsWith("/api/publico/") || requestURI.startsWith("/api/mentores/") || requestURI.startsWith("/api/asesorias/") || requestURI.startsWith("/api/solicitudes-ayuda/")) {
+        if (requestURI.startsWith("/api/auth/") || requestURI.startsWith("/api/publico/") || requestURI.startsWith("/api/mentores/") || requestURI.startsWith("/api/asesorias/") || requestURI.startsWith("/api/solicitudes-ayuda/") || requestURI.startsWith("/api/chats")) {
             filterChain.doFilter(request, response);
             return;
         }

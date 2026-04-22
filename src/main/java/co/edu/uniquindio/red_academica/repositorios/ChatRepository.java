@@ -10,13 +10,13 @@ import java.util.Optional;
 @Repository
 public interface ChatRepository extends MongoRepository<Chat, String> {
 
-    List<Chat> findByEstudiante1IdOrEstudiante2Id(String estudiante1Id, String estudiante2Id);
+    List<Chat> findByUsuario1IdOrUsuario2Id(String usuario1Id, String usuario2Id);
 
-    List<Chat> findByEstudiante1Id(String id);
+    List<Chat> findByUsuario1Id(String id);
 
-    List<Chat> findByEstudiante2Id(String id);
+    List<Chat> findByUsuario2Id(String id);
 
-    Optional<Chat> findByEstudiante1IdAndEstudiante2Id(String estudiante1Id, String estudiante2Id);
+    Optional<Chat> findByUsuario1IdAndUsuario2Id(String usuario1Id, String usuario2Id);
 
-    Optional<Chat> findByEstudiante2IdAndEstudiante1Id(String estudiante2Id, String estudiante1Id);
+    Optional<Chat> findByUsuario2IdAndUsuario1Id(String usuario2Id, String usuario1Id);
 }

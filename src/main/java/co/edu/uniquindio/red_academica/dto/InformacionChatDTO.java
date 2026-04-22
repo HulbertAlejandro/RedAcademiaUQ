@@ -5,10 +5,10 @@ import java.util.List;
 
 public record InformacionChatDTO(
         String id,
-        String estudiante1Id,
-        String nombreEstudiante1,
-        String estudiante2Id,
-        String nombreEstudiante2,
+        String usuario1Id,
+        String nombreUsuario1,
+        String usuario2Id,
+        String nombreUsuario2,
         List<InformacionMensajeDTO> mensajes,
         LocalDateTime ultimoMensaje
 ) {}
