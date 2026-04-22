@@ -115,25 +115,42 @@ public class FiltroToken extends OncePerRequestFilter {
     private boolean tienePermiso(String requestURI, Rol rolUsuario) {
 
         // ADMINISTRADOR
-        if (requestURI.startsWith("/api/admin-mentores/")) {
+        if (requestURI.startsWith("/api/admin-mentores")) {
             return rolUsuario == Rol.ADMINISTRADOR;
         }
 
         // ASESORIAS MENTOR
-        if (requestURI.startsWith("/api/asesorias-mentor/")) {
+        if (requestURI.startsWith("/api/asesorias-mentor")) {
             return rolUsuario == Rol.ASESOR;
         }
 
-        // AGENDAR ASESORIA / MIS ASESORIAS / MIS SOLICITUDES / SOLICITAR AYUDA
-        if (requestURI.startsWith("/api/asesorias/")
-                || requestURI.startsWith("/api/solicitudes-ayuda/estudiante/")
-                || requestURI.startsWith("/api/agendar-asesoria/")) {
+        // AGENDAR ASESORIA
+        if (requestURI.startsWith("/api/agendar-asesoria")) {
             return rolUsuario == Rol.ESTUDIANTE;
         }
 
-        // RESOLVER SOLICITUD
-        if (requestURI.startsWith("/api/solicitudes-ayuda/")
-                || requestURI.startsWith("/api/respuestas-solicitud/")) {
+        // ASESOR - VER SUS ASESORIAS
+        if (requestURI.startsWith("/api/asesorias/asesor")) {
+            return rolUsuario == Rol.ASESOR;
+        }
+
+        // ASESOR - CAMBIAR ESTADO DE ASESORIA
+        if (requestURI.contains("/estado/")) {
+            return rolUsuario == Rol.ASESOR;
+        }
+
+        // ESTUDIANTE - VER SUS ASESORIAS
+        if (requestURI.startsWith("/api/asesorias")) {
+            return rolUsuario == Rol.ESTUDIANTE;
+        }
+
+        // SOLICITUDES DE AYUDA
+        if (requestURI.startsWith("/api/solicitudes-ayuda")) {
+            return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
+        }
+
+        // RESPUESTAS DE SOLICITUD
+        if (requestURI.startsWith("/api/respuestas-solicitud")) {
             return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
         }
 
@@ -143,14 +160,19 @@ public class FiltroToken extends OncePerRequestFilter {
         }
 
         // CONTENIDOS ACADÉMICOS
-        if (requestURI.startsWith("/api/contenidos-academicos/")) {
+        if (requestURI.startsWith("/api/contenidos-academicos")) {
             return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
         }
 
-        // SUBIR CONTENIDO
-        if (requestURI.startsWith("/api/subir-contenido/")
-                || requestURI.startsWith("/api/archivos-academicos/")) {
+        // SUBIR CONTENIDO / ARCHIVOS
+        if (requestURI.startsWith("/api/subir-contenido")
+                || requestURI.startsWith("/api/archivos-academicos")) {
             return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
+        }
+
+        // MENTORES
+        if (requestURI.startsWith("/api/mentores")) {
+            return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ADMINISTRADOR;
         }
 
         // Si no coincide con ninguna regla, negar por seguridad
