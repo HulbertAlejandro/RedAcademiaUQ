@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -42,8 +43,8 @@ public class FiltroToken extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
 
-        // Rutas públicas: no requieren token
-        if (requestURI.startsWith("/api/auth/") || requestURI.startsWith("/api/publico/") || requestURI.startsWith("/api/mentores/") || requestURI.startsWith("/api/asesorias/") || requestURI.startsWith("/api/solicitudes-ayuda/") || requestURI.startsWith("/api/chats")) {
+        // Rutas públicas reales
+        if (esRutaPublica(requestURI)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -56,10 +57,14 @@ public class FiltroToken extends OncePerRequestFilter {
                 return;
             }
 
-            // Aquí puedes validar rol según la ruta
-            boolean error = validarToken(token, Rol.ESTUDIANTE);
+            Rol rolUsuario = obtenerRolDesdeToken(token);
 
-            if (error) {
+            if (rolUsuario == null) {
+                crearRespuestaError("No fue posible identificar el rol del usuario", HttpServletResponse.SC_UNAUTHORIZED, response);
+                return;
+            }
+
+            if (!tienePermiso(requestURI, rolUsuario)) {
                 crearRespuestaError("No tiene permisos para acceder a este recurso", HttpServletResponse.SC_FORBIDDEN, response);
                 return;
             }
@@ -75,9 +80,16 @@ public class FiltroToken extends OncePerRequestFilter {
         }
     }
 
+    private boolean esRutaPublica(String requestURI) {
+        return requestURI.startsWith("/api/auth/")
+                || requestURI.startsWith("/api/publico/");
+    }
+
     private String getToken(HttpServletRequest req) {
         String header = req.getHeader("Authorization");
-        return header != null && header.startsWith("Bearer ") ? header.replace("Bearer ", "") : null;
+        return header != null && header.startsWith("Bearer ")
+                ? header.replace("Bearer ", "")
+                : null;
     }
 
     private void crearRespuestaError(String mensaje, int codigoError, HttpServletResponse response) throws IOException {
@@ -89,14 +101,59 @@ public class FiltroToken extends OncePerRequestFilter {
         response.getWriter().flush();
     }
 
-    private boolean validarToken(String token, Rol rol) {
-        boolean error = true;
-        if (token != null) {
-            Jws<Claims> jws = jwtUtils.parseJwt(token);
-            if (Rol.valueOf(jws.getPayload().get("rol").toString()) == rol) {
-                error = false;
-            }
+    private Rol obtenerRolDesdeToken(String token) {
+        Jws<Claims> jws = jwtUtils.parseJwt(token);
+        Object rolClaim = jws.getPayload().get("rol");
+
+        if (rolClaim == null) {
+            return null;
         }
-        return error;
+
+        return Rol.valueOf(rolClaim.toString());
+    }
+
+    private boolean tienePermiso(String requestURI, Rol rolUsuario) {
+
+        // ADMINISTRADOR
+        if (requestURI.startsWith("/api/admin-mentores/")) {
+            return rolUsuario == Rol.ADMINISTRADOR;
+        }
+
+        // ASESORIAS MENTOR
+        if (requestURI.startsWith("/api/asesorias-mentor/")) {
+            return rolUsuario == Rol.ASESOR;
+        }
+
+        // AGENDAR ASESORIA / MIS ASESORIAS / MIS SOLICITUDES / SOLICITAR AYUDA
+        if (requestURI.startsWith("/api/asesorias/")
+                || requestURI.startsWith("/api/solicitudes-ayuda/estudiante/")
+                || requestURI.startsWith("/api/agendar-asesoria/")) {
+            return rolUsuario == Rol.ESTUDIANTE;
+        }
+
+        // RESOLVER SOLICITUD
+        if (requestURI.startsWith("/api/solicitudes-ayuda/")
+                || requestURI.startsWith("/api/respuestas-solicitud/")) {
+            return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
+        }
+
+        // CHAT
+        if (requestURI.startsWith("/api/chats")) {
+            return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
+        }
+
+        // CONTENIDOS ACADÉMICOS
+        if (requestURI.startsWith("/api/contenidos-academicos/")) {
+            return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
+        }
+
+        // SUBIR CONTENIDO
+        if (requestURI.startsWith("/api/subir-contenido/")
+                || requestURI.startsWith("/api/archivos-academicos/")) {
+            return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ASESOR;
+        }
+
+        // Si no coincide con ninguna regla, negar por seguridad
+        return false;
     }
 }
