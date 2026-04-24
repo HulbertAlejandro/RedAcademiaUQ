@@ -31,7 +31,12 @@ public class FiltroToken extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        response.addHeader("Access-Control-Allow-Origin", "http://localhost:4200");
+        String origin = request.getHeader("Origin");
+        if (origin != null && (origin.equals("http://localhost:4200") || origin.equals("https://red-academica-fronted.web.app"))) {
+            response.addHeader("Access-Control-Allow-Origin", origin);
+        } else {
+            response.addHeader("Access-Control-Allow-Origin", "https://red-academica-fronted.web.app");
+        }
         response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         response.addHeader("Access-Control-Allow-Headers", "Origin, Accept, Content-Type, Authorization");
         response.addHeader("Access-Control-Allow-Credentials", "true");
