@@ -10,7 +10,7 @@ RUN gradle bootJar
 #
 # Package stage
 #
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:21-jdk
 ARG JAR_FILE=build/libs/*.jar
 COPY --from=build /home/gradle/src/build/libs/*.jar app.jar
 EXPOSE ${PORT}
