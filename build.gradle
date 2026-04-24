@@ -41,8 +41,3 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-admin:9.2.0'
 }
-
-java {
-    sourceCompatibility = '21'
-    targetCompatibility = '21'
-}
