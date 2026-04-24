@@ -5,8 +5,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import org.springframework.context.annotation.Configuration;
 import jakarta.annotation.PostConstruct;
-import org.springframework.core.io.ClassPathResource;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 @Configuration
@@ -15,8 +15,14 @@ public class FirebaseConfig {
     @PostConstruct
     public void initializeFirebase() {
         try {
+            String firebaseConfig = System.getenv("FIREBASE_CONFIG");
+
+            if (firebaseConfig == null || firebaseConfig.isBlank()) {
+                throw new RuntimeException("FIREBASE_CONFIG no está definida");
+            }
+
             InputStream serviceAccount =
-                    new ClassPathResource("firebase-config.json").getInputStream();
+                    new ByteArrayInputStream(firebaseConfig.getBytes());
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
@@ -29,7 +35,7 @@ public class FirebaseConfig {
             System.out.println("🔥 Firebase inicializado correctamente");
 
         } catch (Exception e) {
-            System.err.println("❌ Error inicializando Firebase: " + e.getMessage());
+            throw new RuntimeException("❌ Error inicializando Firebase", e);
         }
     }
 }
