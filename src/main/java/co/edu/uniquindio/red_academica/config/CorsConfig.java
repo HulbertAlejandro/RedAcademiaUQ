@@ -13,10 +13,9 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        .allowedOrigins(
+                registry.addMapping("/api/**").allowedOrigins(
                                 "http://localhost:4200",
-                                "https://red-academica-fronted.web.app"
+                                "https://red-academica-d3730.web.app"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
