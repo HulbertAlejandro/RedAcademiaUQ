@@ -175,6 +175,11 @@ public class FiltroToken extends OncePerRequestFilter {
             return rolUsuario == Rol.ESTUDIANTE || rolUsuario == Rol.ADMINISTRADOR;
         }
 
+        // ESTADISTICAS
+        if (requestURI.startsWith("/api/estadisticas")) {
+            return rolUsuario == Rol.ADMINISTRADOR;
+        }
+
         // Si no coincide con ninguna regla, negar por seguridad
         return false;
     }
