@@ -21,6 +21,7 @@ public interface AsesoriaRepository extends MongoRepository<Asesoria, String> {
 
     List<Asesoria> findByEstado(EstadoAsesoria estado);
 
+
     List<Asesoria> findByFechaHoraBetween(LocalDateTime inicio, LocalDateTime fin);
 
     List<Asesoria> findBySolicitanteIdAndEstado(String solicitanteId, EstadoAsesoria estado);
