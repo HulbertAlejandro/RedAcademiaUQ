@@ -1,6 +1,7 @@
 package co.edu.uniquindio.red_academica.servicios.interfaces;
 
 import co.edu.uniquindio.red_academica.dto.CrearAsesoriaDTO;
+import co.edu.uniquindio.red_academica.dto.GraficaEstadoAsesoriaDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionAsesoriaDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.Asesoria;
 import co.edu.uniquindio.red_academica.modelo.enums.EstadoAsesoria;
@@ -25,4 +26,6 @@ public interface AsesoriaService {
     List<InformacionAsesoriaDTO> obtenerPorEstado(EstadoAsesoria estado) throws Exception;
 
     void actualizarEstado(String id, EstadoAsesoria estado) throws Exception;
+
+    List<GraficaEstadoAsesoriaDTO> obtenerGraficaEstadosPorAsesor(String asesorId) throws Exception;
 }

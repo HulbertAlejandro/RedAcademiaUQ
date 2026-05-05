@@ -1,12 +1,6 @@
-# IntelliJ
-.idea/
-
-# Compilación Java
+/.idea/
 *.class
-.gradle/
-build/
-*/build/
-*/bin/
-
-# Firebase
-src/main/resources/firebase-config.json
+/.gradle/
+/*/bin/
+/*/build/
+/build/

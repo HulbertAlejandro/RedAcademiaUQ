@@ -1,6 +1,7 @@
 package co.edu.uniquindio.red_academica.servicios.impl;
 
 import co.edu.uniquindio.red_academica.dto.CrearAsesoriaDTO;
+import co.edu.uniquindio.red_academica.dto.GraficaEstadoAsesoriaDTO;
 import co.edu.uniquindio.red_academica.dto.InformacionAsesoriaDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.Asesoria;
 import co.edu.uniquindio.red_academica.modelo.documentos.Estudiante;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -184,5 +186,24 @@ public class AsesoriaServiceImpl implements AsesoriaService {
 
         asesoria.setEstado(estado);
         asesoriaRepository.save(asesoria);
+    }
+
+    @Override
+    public List<GraficaEstadoAsesoriaDTO> obtenerGraficaEstadosPorAsesor(String asesorId) throws Exception {
+
+        List<Asesoria> asesorias = asesoriaRepository.findByAsesorId(asesorId);
+
+        Map<EstadoAsesoria, Long> conteo = asesorias.stream()
+                .collect(Collectors.groupingBy(
+                        Asesoria::getEstado,
+                        Collectors.counting()
+                ));
+
+        return conteo.entrySet().stream()
+                .map(entry -> new GraficaEstadoAsesoriaDTO(
+                        entry.getKey(),
+                        entry.getValue().intValue()
+                ))
+                .toList();
     }
 }

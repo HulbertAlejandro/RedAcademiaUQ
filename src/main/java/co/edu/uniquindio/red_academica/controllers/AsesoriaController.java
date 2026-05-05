@@ -71,4 +71,16 @@ public class AsesoriaController {
         asesoriaService.actualizarEstado(id, estadoEnum);
         return ResponseEntity.ok(new ResponseDTO<>("Estado actualizado", null));
     }
+
+    @GetMapping("/asesor/{asesorId}/grafica-estados")
+    public ResponseEntity<ResponseDTO<List<GraficaEstadoAsesoriaDTO>>> graficaEstadosPorAsesor(
+            @PathVariable String asesorId) throws Exception {
+
+        List<GraficaEstadoAsesoriaDTO> datos =
+                asesoriaService.obtenerGraficaEstadosPorAsesor(asesorId);
+
+        return ResponseEntity.ok(
+                new ResponseDTO<>("Estados de asesorías del asesor", datos)
+        );
+    }
 }

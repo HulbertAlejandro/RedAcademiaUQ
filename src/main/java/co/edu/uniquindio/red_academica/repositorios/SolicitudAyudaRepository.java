@@ -1,8 +1,10 @@
 package co.edu.uniquindio.red_academica.repositorios;
 
+import co.edu.uniquindio.red_academica.dto.EstadisticaSolicitudDTO;
 import co.edu.uniquindio.red_academica.modelo.documentos.SolicitudAyuda;
 import co.edu.uniquindio.red_academica.modelo.enums.EstadoSolicitud;
 import co.edu.uniquindio.red_academica.modelo.enums.TEMA;
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -27,4 +29,16 @@ public interface SolicitudAyudaRepository extends MongoRepository<SolicitudAyuda
     List<SolicitudAyuda> findBySolicitanteIdAndEstado(String solicitanteId, EstadoSolicitud estado);
 
     List<SolicitudAyuda> findByIdContenidoResueltoIsNotNull();
+
+
+    // ===============================
+    // ESTADISTICAS
+    // ===============================
+
+    // Cantidad de solicitudes por estado
+    @Aggregation(pipeline = {
+            "{ $group: { _id: '$estado', total: { $sum: 1 } } }",
+            "{ $project: { estado: '$_id', total: 1, _id: 0 } }"
+    })
+    List<EstadisticaSolicitudDTO> solicitudesPorEstado();
 }
